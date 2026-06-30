@@ -1,0 +1,12 @@
+[
+  { "name": "Hendrik",  "passwordHash": "$2b$12$ZRF3C5tZpWob1nAAkvXtaOprCCvnlvAXi/D3xWqDEz6YlA8XBwcwO" },
+  { "name": "Gus",      "passwordHash": "$2b$12$xCwo8ysYg/BePEvFYWUqiO1G9iITynZoAwp/qOArwvmhwCSUhVlsm" },
+  { "name": "Nico",     "passwordHash": "$2b$12$JAzXlxDvINErEVTcJalNTe0ERIQ3DkXKGxfWsNnbrIz.GMdh.LZwq" },
+  { "name": "Manuel",   "passwordHash": "$2b$12$S9ETb88eb7wH9Vy.wXINgu.CZiN3kn39zmIvWsQXv0xBbaFpWXu2O" },
+  { "name": "George",   "passwordHash": "$2b$12$xzX0Gas3E2ZIvcKVe2S2/.XuKwZEq3v4ZcaxPHE71MByh9sqHusQG" },
+  { "name": "Erland",   "passwordHash": "$2b$12$58gsL2blu1MO8PbJK9LzkO0Fqo3oTbgTPjjD01r7CfMVsx3ry9ylq" },
+  { "name": "Ali",      "passwordHash": "$2b$12$Y1r/FUwKaI2FhIZHc9eZNusz8I3oHgi.zPapzY9AuEv6ExKRo7U52" },
+  { "name": "Loic",     "passwordHash": "$2b$12$Rnk6Eic1puBr/qgpz8drZeZN42qJFfdFr/u65rPQyi/9HkVfJilpG" },
+  { "name": "Jean-Luc", "passwordHash": "$2b$12$rOE.iVcAMuYvzbUm.6feOOH/IK.rk1nN62OV6DSmlLlHSgPCWkg5u" },
+  { "name": "Liesbeth", "passwordHash": "$2b$12$Sh9YpOGhdlOGV/pXmQmgb.Noqr/uOTnZLDA3wsqfevchrodQ2OqJa" }
+]

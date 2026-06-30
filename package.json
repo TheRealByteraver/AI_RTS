@@ -8,5 +8,9 @@
   },
   "devDependencies": {
     "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "bcryptjs": "^3.0.3"
   }
 }
