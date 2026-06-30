@@ -1,0 +1,12 @@
+{
+  "name": "rts-engine",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev:server": "pnpm --filter @rts/server dev",
+    "dev:client": "pnpm --filter @rts/client dev"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
