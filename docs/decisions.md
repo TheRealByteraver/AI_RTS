@@ -84,6 +84,21 @@ _Last updated: 2026-06-22_
 - **Server → existing 1 GB DigitalOcean droplet.** Vercel's stateless serverless model can't hold a persistent WebSocket connection or run an always-on tick loop, so the server needs a persistent-process host. 1 GB RAM is comfortably sufficient at this scale (game state is well under 1 MB per match); **CPU / tick-time is the thing to watch**, not RAM.
 - _Deployment mechanics (how to get only the server onto the droplet) postponed — see open threads._
 
+### 8. Authentication & session management
+- **Method:** JWT in an httpOnly, Secure, SameSite=Strict cookie
+- **Signing:** HS256 with a SECRET_KEY in env (upgrade path to RS256 exists if multi-server ever needed)
+- **Expiry:** 24 hours, renewed on every successful WebSocket (re)connection
+- **Logout:** server issues Max-Age=0 Set-Cookie; client cannot touch httpOnly cookies from JS
+- **Presence:** WebSocket connection is the source of truth for who is online, not token validity
+- **Credentials:** hardcoded username/bcrypt-hash list in env for M0
+
+### 9. WebSocket design
+- **One persistent connection per player** for the entire session (lobby + game + post-game)
+- **Auth happens once** at the HTTP upgrade handshake; messages are not individually authenticated
+- **Message identity:** derived from which socket a message arrived on, not from message contents
+- **Multiplexed message types:** lobby_state, game_state, game_started, game_ended, error
+- **Reconnection:** client-side exponential backoff; server re-validates JWT on each reconnect
+- **Broadcast scope:** lobby_state → all connected players; game_state → 2 players in that game only
 ---
 
 ## Milestones (ordered)
