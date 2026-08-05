@@ -21,6 +21,7 @@ export class GameServer {
     console.log(`WebSocket server listening on :${port}`);
   }
 
+  // this fn fires whenever a new client tries to connect
   private handleConnection(socket: WebSocket): void {
     let playerId: string | null = null;
     let tickCallback: ((state: GameState) => void) | null = null;
