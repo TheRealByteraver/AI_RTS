@@ -107,7 +107,8 @@ Principle: get the system working **end-to-end** as early as possible, then deep
 
 | # | Milestone | Goal |
 |---|---|---|
-| **M0** | Skeleton: "hello multiplayer world" — minimal GameState, 20 Hz server tick loop, WebSocket + login, client dumps raw state | Prove the full pipe works before any game logic |
+| **M0** | Skeleton: "hello multiplayer world", WebSocket + login, client dumps raw state | Prove the full pipe works before any game logic |
+| **M0.5** | minimal GameState, 20 Hz server tick loop
 | **M1** | Static world, one controllable unit (real grid + terrain, command → move, ASCII renderer) | Prove client→command→server→state→render loop |
 | **M2** | Movement & pathfinding; multiple units; **stress-test with synthetic units to validate ECS/perf at ~250** | De-risk the performance-sensitive core early |
 | **M3** | Two-player interaction: distinct ownership, basic combat (attack, health, death) | First point it's actually an RTS |

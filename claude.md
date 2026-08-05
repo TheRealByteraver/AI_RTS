@@ -72,7 +72,6 @@ Scope:
 - Login form → POST /auth/login → JWT cookie
 - WebSocket connection opened immediately after login
 - Lobby: create game / join game / cancel game
-- Two players joining a game → both see a connected confirmation screen with game ID, both usernames, and a live tick counter
 - Graceful disconnection message if WebSocket closes unexpectedly
 - Automatic client-side reconnection with exponential backoff
 
