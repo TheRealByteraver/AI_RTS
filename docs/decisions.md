@@ -99,6 +99,12 @@ _Last updated: 2026-06-22_
 - **Multiplexed message types:** lobby_state, game_state, game_started, game_ended, error
 - **Reconnection:** client-side exponential backoff; server re-validates JWT on each reconnect
 - **Broadcast scope:** lobby_state → all connected players; game_state → 2 players in that game only
+
+### Lobby fundamentals
+- **Lobby access** players must authenticate, after which the server will open a websocket connection with the player
+- **Lobby state** any change to the lobby (i.e. new player logs in, starts a game, etc) will be broadcasted to all players in the lobby
+- **lobby actions** players can start a game and invite other players to their game
+
 ---
 
 ## Milestones (ordered)
@@ -108,7 +114,7 @@ Principle: get the system working **end-to-end** as early as possible, then deep
 | # | Milestone | Goal |
 |---|---|---|
 | **M0** | Skeleton: "hello multiplayer world", WebSocket + login, client dumps raw state | Prove the full pipe works before any game logic |
-| **M0.5** | minimal GameState, 20 Hz server tick loop
+| **M0.5** | minimal GameState, 20 Hz server tick loop | mvp for an active, running game |
 | **M1** | Static world, one controllable unit (real grid + terrain, command → move, ASCII renderer) | Prove client→command→server→state→render loop |
 | **M2** | Movement & pathfinding; multiple units; **stress-test with synthetic units to validate ECS/perf at ~250** | De-risk the performance-sensitive core early |
 | **M3** | Two-player interaction: distinct ownership, basic combat (attack, health, death) | First point it's actually an RTS |
