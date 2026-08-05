@@ -48,7 +48,6 @@ These are recorded in full in DECISIONS.md. Short-form reminders:
 - **Networking** — WebSocket, server is authoritative, full state broadcast at ~20 Hz. No deltas in v1.
 - **Data format** — JSON5 + Zod for all game content definitions.
 - **Auth** — JWT in an httpOnly cookie (HS256). One persistent WebSocket per player per session. JWT verified once at upgrade handshake only.
-- **Lobby** — server-side in-memory Map; WebSocket connection = presence, not token validity.
 
 ---
 
@@ -71,7 +70,7 @@ Goal: prove the full pipe works. No game logic, no grid, no units.
 Scope:
 - Login form → POST /auth/login → JWT cookie
 - WebSocket connection opened immediately after login
-- Lobby: create game / join game / cancel game
+- Lobby: see other logged in players
 - Graceful disconnection message if WebSocket closes unexpectedly
 - Automatic client-side reconnection with exponential backoff
 

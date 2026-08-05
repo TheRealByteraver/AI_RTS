@@ -100,7 +100,7 @@ _Last updated: 2026-06-22_
 - **Reconnection:** client-side exponential backoff; server re-validates JWT on each reconnect
 - **Broadcast scope:** lobby_state → all connected players; game_state → 2 players in that game only
 
-### Lobby fundamentals
+### 10. Lobby fundamentals
 - **Lobby access** players must authenticate, after which the server will open a websocket connection with the player
 - **Lobby state** any change to the lobby (i.e. new player logs in, starts a game, etc) will be broadcasted to all players in the lobby
 - **lobby actions** players can start a game and invite other players to their game
@@ -120,7 +120,7 @@ Principle: get the system working **end-to-end** as early as possible, then deep
 | **M3** | Two-player interaction: distinct ownership, basic combat (attack, health, death) | First point it's actually an RTS |
 | **M4** | Resource/economy loop: gathering, buildings, unit production | Closes the core gather→build→fight loop |
 | **M5** | AI opponent (rule-based bot via the shared command interface) | Enables solo play/testing |
-| **M6** | Win/loss conditions, match flow, lobby for the friend group | Turns it into a startable/finishable match |
+| **M6** | Win/loss conditions, match flow | Turns it into a startable/finishable match |
 | **M7** | Polish & graphics: swap ASCII renderer for SVG/Pixi (purely additive given decoupled renderer) | Visual layer |
 
 ---
