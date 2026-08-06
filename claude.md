@@ -5,6 +5,7 @@
 Before doing anything in this repo, read the following files in full:
 
 - @DOCS/DECISIONS.md — single source of truth for all architecture and design decisions
+- @DOCS/CONVENTIONS.MD - coding conventions to follow
 
 Do not suggest alternatives to settled decisions without explicitly flagging the conflict
 and explaining why the settled decision should be reconsidered.

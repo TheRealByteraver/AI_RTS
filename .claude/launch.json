@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "rts-client",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@rts/client", "dev"],
+      "port": 5173
+    }
+  ]
+}

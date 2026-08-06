@@ -1,9 +1,9 @@
 import type { ClientCommand } from './ClientCommand';
-import type { GameState } from './GameState';
+import type { LobbyState } from './LobbyState';
 
 export interface GameTransport {
   connect(): void;
   disconnect(): void;
   send(command: ClientCommand): void;
-  onState(callback: (state: GameState) => void): void;
+  onLobbyState(callback: (state: LobbyState) => void): void;
 }

@@ -1,0 +1,21 @@
+# Coding conventions
+
+## Conventions for both the frontend and the backend
+
+- Throughout the codebase, only use arrow style functions.
+- Never use single character variable names, but use full words instead as much as possible. If different variables end up having the same name, use leading underscores for the narrower-scoped variables. For further naming conflicts, abbreviate the variable names by omitting the vowels. As a last resort, fall back to single character variable names.
+
+## Frontend only coding conventions
+
+- In every React component, use the following section structure and comments (omit a section if it is empty):
+1. `// PROPS` — first line of any component that receives props, immediately followed by destructuring of `props`. The component must accept a single argument `props: Props`. The `Props` type must be defined directly above the component declaration.
+2. `// STATE` — all `useState` assignments grouped together.
+3. `// HOOKS` — all custom hook assignments grouped together.
+4. `// EFFECTS` — all `useEffect` calls grouped together.
+5. `// METHODS` — all function declarations grouped together.
+6. `// VARS` — all other `var`/`let`/`const` declarations grouped together.
+7. export the function manually at the bottom of the file. Do not inline the `export` keyword in the function declaration.
+
+Maintain this order as much as the code allows. If code dependencies force a section to appear more than once, append a part number to the comment, e.g. `// VARS, part 2`.
+
+JSX return(s) come after all sections.

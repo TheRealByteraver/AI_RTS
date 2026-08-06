@@ -1,79 +1,129 @@
-import { WebSocketServer, WebSocket } from 'ws';
-import type { ClientCommand, GameState } from '@rts/shared';
-import { GameLoop } from './GameLoop';
+import { randomUUID } from 'node:crypto';
+import { createServer } from 'node:http';
+import type { IncomingMessage } from 'node:http';
+import cors from 'cors';
+import { parse as parseCookie, serialize as serializeCookie } from 'cookie';
+import express, { type Request, type Response } from 'express';
+import { WebSocketServer } from 'ws';
+import { z } from 'zod';
+import type { ClientCommand } from '@rts/shared';
+import { AUTH_COOKIE_MAX_AGE_MS, AUTH_COOKIE_NAME, signToken, verifyCredentials, verifyToken } from './auth';
+import { Lobby } from './Lobby';
+import { listPlayerNames } from './players';
 
-const GAME_PASSWORD = process.env.GAME_PASSWORD ?? 'rts123';
+const LoginBodySchema = z.object({
+  username: z.string().min(1),
+  password: z.string().min(1),
+});
 
-interface LoginMessage {
-  type: 'LOGIN';
-  password: string;
-}
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'strict' as const,
+  path: '/',
+};
+
+type AuthenticatedRequest = IncomingMessage & { username?: string };
 
 export class GameServer {
-  private webSocketServer: WebSocketServer;
-  private loop: GameLoop;
-  private nextPlayerId = 1;
+  private lobby = new Lobby();
 
-  constructor(port: number, loop: GameLoop) {
-    this.loop = loop;
-    this.webSocketServer = new WebSocketServer({ port });
-    this.webSocketServer.on('connection', socket => this.handleConnection(socket));
-    console.log(`WebSocket server listening on :${port}`);
-  }
+  constructor(port: number, clientOrigin: string) {
+    const app = express();
+    app.use(cors({ origin: clientOrigin, credentials: true }));
+    app.use(express.json());
 
-  // this fn fires whenever a new client tries to connect
-  private handleConnection(socket: WebSocket): void {
-    let playerId: string | null = null;
-    let tickCallback: ((state: GameState) => void) | null = null;
+    app.get('/auth/players', (_req: Request, res: Response) => {
+      res.json({ players: listPlayerNames() });
+    });
 
-    const cleanup = () => {
-      if (playerId) this.loop.removePlayer(playerId);
-      if (tickCallback) this.loop.offTick(tickCallback);
-    };
+    app.post('/auth/login', async (req: Request, res: Response) => {
+      const parsed = LoginBodySchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Invalid request' });
+        return;
+      }
 
-    socket.once('message', rawData => {
-      try {
-        const message = JSON.parse(rawData.toString()) as LoginMessage;
-        if (message.type !== 'LOGIN' || message.password !== GAME_PASSWORD) {
-          socket.send(JSON.stringify({ type: 'LOGIN_FAIL' }));
-          socket.close();
+      const { username, password } = parsed.data;
+      const credentialsOk = await verifyCredentials(username, password);
+      if (!credentialsOk) {
+        res.status(401).json({ error: 'Invalid username or password' });
+        return;
+      }
+
+      const token = signToken(username);
+      res.cookie(AUTH_COOKIE_NAME, token, { ...COOKIE_OPTIONS, maxAge: AUTH_COOKIE_MAX_AGE_MS });
+      res.json({ username });
+    });
+
+    app.post('/auth/logout', (_req: Request, res: Response) => {
+      res.clearCookie(AUTH_COOKIE_NAME, COOKIE_OPTIONS);
+      res.json({ ok: true });
+    });
+
+    const httpServer = createServer(app);
+
+    const wss = new WebSocketServer({
+      server: httpServer,
+      path: '/ws',
+      verifyClient: (info, callback) => {
+        const cookieHeader = info.req.headers.cookie;
+        const token = cookieHeader ? parseCookie(cookieHeader)[AUTH_COOKIE_NAME] : undefined;
+        const payload = token ? verifyToken(token) : null;
+
+        if (!payload) {
+          callback(false, 401, 'Unauthorized');
           return;
         }
 
-        playerId = `player-${this.nextPlayerId++}`;
-        this.loop.addPlayer(playerId);
-        socket.send(JSON.stringify({ type: 'LOGIN_OK', playerId }));
-        console.log(`${playerId} authenticated`);
-
-        tickCallback = (state: GameState) => {
-          if (socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify({ type: 'STATE', state }));
-          }
-        };
-        this.loop.onTick(tickCallback);
-
-        socket.on('message', rawMessage => {
-          try {
-            const command = JSON.parse(rawMessage.toString()) as ClientCommand;
-            void command; // commands handled in M1+
-          } catch {
-            // ignore malformed messages
-          }
-        });
-
-        socket.on('close', () => {
-          console.log(`${playerId} disconnected`);
-          cleanup();
-        });
-
-        socket.on('error', () => cleanup());
-      } catch {
-        socket.close();
-      }
+        (info.req as AuthenticatedRequest).username = payload.username;
+        callback(true);
+      },
     });
 
-    socket.on('close', () => {
-      if (!playerId) cleanup(); // closed before login completed
+    // Renews the JWT cookie on every successful (re)connect, per DECISIONS.md §8.
+    wss.on('headers', (headers, req) => {
+      const username = (req as AuthenticatedRequest).username;
+      if (!username) return;
+
+      const refreshed = signToken(username);
+      const cookie = serializeCookie(AUTH_COOKIE_NAME, refreshed, {
+        ...COOKIE_OPTIONS,
+        maxAge: AUTH_COOKIE_MAX_AGE_MS / 1000,
+      });
+      headers.push(`Set-Cookie: ${cookie}`);
+    });
+
+    wss.on('connection', (socket, req) => {
+      const username = (req as AuthenticatedRequest).username;
+      if (!username) {
+        socket.close(1008, 'Unauthorized');
+        return;
+      }
+
+      const connectionId = randomUUID();
+      this.lobby.add(connectionId, username, socket);
+      console.log(`${username} joined the lobby`);
+      this.lobby.broadcast();
+
+      socket.on('message', rawMessage => {
+        try {
+          const command = JSON.parse(rawMessage.toString()) as ClientCommand;
+          void command; // no commands handled in M0
+        } catch {
+          // ignore malformed messages
+        }
+      });
+
+      socket.on('close', () => {
+        this.lobby.remove(connectionId);
+        console.log(`${username} left the lobby`);
+        this.lobby.broadcast();
+      });
+    });
+
+    httpServer.listen(port, () => {
+      console.log(`Server listening on :${port}`);
     });
   }
 }

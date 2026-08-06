@@ -1,40 +1,75 @@
 import { useRef, useState } from 'react';
-import type { GameState } from '@rts/shared';
-import { WebSocketTransport } from './WebSocketTransport';
+import type { LobbyState } from '@rts/shared';
+import { login as loginRequest, logout as logoutRequest } from './AuthApi';
+import { LobbyView } from './LobbyView';
 import { LoginScreen } from './LoginScreen';
-import { GameView } from './GameView';
+import { WebSocketTransport } from './WebSocketTransport';
 
-type Status = 'idle' | 'connecting' | 'auth_failed' | 'connected';
+type Status = 'idle' | 'connecting' | 'auth_failed' | 'connected' | 'reconnecting' | 'disconnected';
 
 export function App() {
   const [status, setStatus] = useState<Status>('idle');
-  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
+  const [lobbyState, setLobbyState] = useState<LobbyState | null>(null);
   const transportRef = useRef<WebSocketTransport | null>(null);
 
-  const handleLogin = (password: string) => {
+  const handleLogin = async (name: string, password: string) => {
     setStatus('connecting');
-    const t = new WebSocketTransport(password);
-    transportRef.current = t;
+    const result = await loginRequest(name, password);
+    if (!result.ok) {
+      setStatus('auth_failed');
+      return;
+    }
 
-    t.onStatus(s => {
+    setUsername(name);
+    const transport = new WebSocketTransport();
+    transportRef.current = transport;
+
+    transport.onStatus(s => {
       if (s === 'connected') setStatus('connected');
-      else if (s === 'auth_failed') setStatus('auth_failed');
-      else setStatus('idle');
+      else if (s === 'reconnecting') setStatus('reconnecting');
+      else setStatus('disconnected');
     });
-
-    t.onState(s => setGameState(s));
-    t.connect();
+    transport.onLobbyState(state => setLobbyState(state));
+    transport.connect();
   };
 
-  if (status === 'connected' && gameState) {
-    return <GameView state={gameState} />;
+  const handleLogout = async () => {
+    transportRef.current?.disconnect();
+    transportRef.current = null;
+    await logoutRequest();
+    setUsername(null);
+    setLobbyState(null);
+    setStatus('idle');
+  };
+
+  if (status === 'connected' || status === 'reconnecting') {
+    return (
+      <div>
+        {status === 'reconnecting' && <p>Connection lost — reconnecting…</p>}
+        {lobbyState && username ? (
+          <LobbyView state={lobbyState} currentUsername={username} onLogout={handleLogout} />
+        ) : (
+          <p>Connecting to lobby…</p>
+        )}
+      </div>
+    );
+  }
+
+  if (status === 'disconnected') {
+    return (
+      <div>
+        <p>Disconnected — please log in again.</p>
+        <LoginScreen onLogin={handleLogin} isConnecting={false} />
+      </div>
+    );
   }
 
   return (
     <LoginScreen
       onLogin={handleLogin}
       isConnecting={status === 'connecting'}
-      error={status === 'auth_failed' ? 'Wrong password' : undefined}
+      error={status === 'auth_failed' ? 'Invalid username or password' : undefined}
     />
   );
 }
