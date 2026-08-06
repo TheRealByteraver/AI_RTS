@@ -6,16 +6,18 @@ const RECONNECT_BASE_DELAY_MS = 1000;
 const RECONNECT_MAX_DELAY_MS = 30000;
 const RECONNECT_MAX_ATTEMPTS = 6;
 
-export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
+export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected' | 'unauthenticated';
 type StatusCallback = (status: ConnectionStatus) => void;
 
 export class WebSocketTransport implements GameTransport {
   private socket: WebSocket | null = null;
   private lobbyCallbacks = new Set<(state: LobbyState) => void>();
+  private welcomeCallbacks = new Set<(username: string) => void>();
   private statusCallback: StatusCallback | null = null;
   private reconnectAttempts = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private intentionalDisconnect = false;
+  private hasConnectedOnce = false;
 
   onStatus = (callback: StatusCallback): void => {
     this.statusCallback = callback;
@@ -23,21 +25,32 @@ export class WebSocketTransport implements GameTransport {
 
   connect = (): void => {
     this.intentionalDisconnect = false;
+    this.hasConnectedOnce = false;
+    this.reconnectAttempts = 0;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     this.openSocket();
   };
 
   private openSocket = (): void => {
     const socket = new WebSocket(WS_URL);
     this.socket = socket;
+    let thisSocketOpened = false;
 
     socket.onopen = () => {
+      thisSocketOpened = true;
+      this.hasConnectedOnce = true;
       this.reconnectAttempts = 0;
       this.statusCallback?.('connected');
     };
 
     socket.onmessage = event => {
       const message = JSON.parse(event.data as string) as ServerMessage;
-      if (message.type === 'lobby_state') {
+      if (message.type === 'welcome') {
+        for (const callback of this.welcomeCallbacks) callback(message.username);
+      } else if (message.type === 'lobby_state') {
         for (const callback of this.lobbyCallbacks) callback(message.state);
       } else if (message.type === 'error') {
         console.error('Server error:', message.message);
@@ -46,6 +59,10 @@ export class WebSocketTransport implements GameTransport {
 
     socket.onclose = () => {
       if (this.intentionalDisconnect) return;
+      if (!thisSocketOpened && !this.hasConnectedOnce) {
+        this.statusCallback?.('unauthenticated');
+        return;
+      }
       this.scheduleReconnect();
     };
   };
@@ -77,5 +94,9 @@ export class WebSocketTransport implements GameTransport {
 
   onLobbyState = (callback: (state: LobbyState) => void): void => {
     this.lobbyCallbacks.add(callback);
+  };
+
+  onWelcome = (callback: (username: string) => void): void => {
+    this.welcomeCallbacks.add(callback);
   };
 }

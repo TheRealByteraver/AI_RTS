@@ -1,17 +1,44 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { LobbyState } from '@rts/shared';
 import { login as loginRequest, logout as logoutRequest } from './AuthApi';
 import { LobbyView } from './LobbyView';
 import { LoginScreen } from './LoginScreen';
 import { WebSocketTransport } from './WebSocketTransport';
 
-type Status = 'idle' | 'connecting' | 'auth_failed' | 'connected' | 'reconnecting' | 'disconnected';
+type Status = 'connecting' | 'unauthenticated' | 'auth_failed' | 'connected' | 'reconnecting' | 'disconnected';
 
 function App() {
   // STATE
-  const [connectionStatus, setConnectionStatus] = useState<Status>('idle');
+  const [connectionStatus, setConnectionStatus] = useState<Status>('connecting');
   const [username, setUsername] = useState<string | null>(null);
   const [lobbyState, setLobbyState] = useState<LobbyState | null>(null);
+
+  // VARS
+  const transportRef = useRef<WebSocketTransport | null>(null);
+
+  // EFFECTS
+  useEffect(() => {
+    const transport = new WebSocketTransport();
+    transportRef.current = transport;
+
+    transport.onStatus(status => {
+      if (status === 'connected') setConnectionStatus('connected');
+      else if (status === 'reconnecting') setConnectionStatus('reconnecting');
+      else if (status === 'unauthenticated') {
+        setUsername(null);
+        setConnectionStatus('unauthenticated');
+      } else {
+        setConnectionStatus('disconnected');
+      }
+    });
+    transport.onWelcome(name => setUsername(name));
+    transport.onLobbyState(state => setLobbyState(state));
+    transport.connect();
+
+    return () => {
+      transport.disconnect();
+    };
+  }, []);
 
   // METHODS
   const handleLogin = async (name: string, password: string) => {
@@ -21,31 +48,16 @@ function App() {
       setConnectionStatus('auth_failed');
       return;
     }
-
-    setUsername(name);
-    const transport = new WebSocketTransport();
-    transportRef.current = transport;
-
-    transport.onStatus(status => {
-      if (status === 'connected') setConnectionStatus('connected');
-      else if (status === 'reconnecting') setConnectionStatus('reconnecting');
-      else setConnectionStatus('disconnected');
-    });
-    transport.onLobbyState(state => setLobbyState(state));
-    transport.connect();
+    transportRef.current?.connect();
   };
 
   const handleLogout = async () => {
     transportRef.current?.disconnect();
-    transportRef.current = null;
     await logoutRequest();
     setUsername(null);
     setLobbyState(null);
-    setConnectionStatus('idle');
+    setConnectionStatus('unauthenticated');
   };
-
-  // VARS
-  const transportRef = useRef<WebSocketTransport | null>(null);
 
   if (connectionStatus === 'connected' || connectionStatus === 'reconnecting') {
     return (
@@ -60,6 +72,10 @@ function App() {
     );
   }
 
+  if (connectionStatus === 'connecting') {
+    return <p>Connecting…</p>;
+  }
+
   if (connectionStatus === 'disconnected') {
     return (
       <div>
@@ -72,7 +88,7 @@ function App() {
   return (
     <LoginScreen
       onLogin={handleLogin}
-      isConnecting={connectionStatus === 'connecting'}
+      isConnecting={false}
       error={connectionStatus === 'auth_failed' ? 'Invalid username or password' : undefined}
     />
   );

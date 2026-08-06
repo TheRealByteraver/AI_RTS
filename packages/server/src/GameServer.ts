@@ -103,6 +103,7 @@ export class GameServer {
 
       const connectionId = randomUUID();
       this.lobby.add(connectionId, username, socket);
+      socket.send(JSON.stringify({ type: 'welcome', username }));
       console.log(`${username} joined the lobby`);
       this.lobby.broadcast();
 
