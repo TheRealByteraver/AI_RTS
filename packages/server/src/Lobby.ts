@@ -17,6 +17,13 @@ export class Lobby {
     this.connections.delete(connectionId);
   };
 
+  hasPlayer = (username: string): boolean => {
+    for (const connection of this.connections.values()) {
+      if (connection.username === username) return true;
+    }
+    return false;
+  };
+
   getState = (): LobbyState => {
     return { players: [...this.connections.values()].map(connection => connection.username) };
   };

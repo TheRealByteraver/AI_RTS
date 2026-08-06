@@ -37,3 +37,16 @@ export const login = async (
 export const logout = async (): Promise<void> => {
   await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
 };
+
+export type ConnectionStatusCheck = 'available' | 'unauthenticated' | 'already_connected';
+
+export const checkConnectionStatus = async (): Promise<ConnectionStatusCheck> => {
+  try {
+    const response = await fetch(`${API_URL}/auth/status`, { credentials: 'include' });
+    if (response.status === 409) return 'already_connected';
+    if (response.ok) return 'available';
+    return 'unauthenticated';
+  } catch {
+    return 'unauthenticated';
+  }
+};

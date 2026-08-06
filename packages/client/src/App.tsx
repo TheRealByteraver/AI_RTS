@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { LobbyState } from '@rts/shared';
 import { login as loginRequest, logout as logoutRequest } from './AuthApi';
+import { AlreadyConnectedScreen } from './AlreadyConnectedScreen';
 import { LobbyView } from './LobbyView';
 import { LoginScreen } from './LoginScreen';
 import { WebSocketTransport } from './WebSocketTransport';
 
-type Status = 'connecting' | 'unauthenticated' | 'auth_failed' | 'connected' | 'reconnecting' | 'disconnected';
+type Status = 'connecting' | 'unauthenticated' | 'auth_failed' | 'connected' | 'reconnecting' | 'disconnected' | 'already_connected';
 
 function App() {
   // STATE
@@ -24,6 +25,7 @@ function App() {
     transport.onStatus(status => {
       if (status === 'connected') setConnectionStatus('connected');
       else if (status === 'reconnecting') setConnectionStatus('reconnecting');
+      else if (status === 'already_connected') setConnectionStatus('already_connected');
       else if (status === 'unauthenticated') {
         setUsername(null);
         setConnectionStatus('unauthenticated');
@@ -51,6 +53,17 @@ function App() {
     transportRef.current?.connect();
   };
 
+  const handleRetry = () => {
+    setConnectionStatus('connecting');
+    transportRef.current?.connect();
+  };
+
+  const handleGoToLogin = async () => {
+    await logoutRequest();
+    setUsername(null);
+    setConnectionStatus('unauthenticated');
+  };
+
   const handleLogout = async () => {
     transportRef.current?.disconnect();
     await logoutRequest();
@@ -58,6 +71,10 @@ function App() {
     setLobbyState(null);
     setConnectionStatus('unauthenticated');
   };
+
+  if (connectionStatus === 'already_connected') {
+    return <AlreadyConnectedScreen onRetry={handleRetry} onGoToLogin={handleGoToLogin} />;
+  }
 
   if (connectionStatus === 'connected' || connectionStatus === 'reconnecting') {
     return (

@@ -37,6 +37,24 @@ export class GameServer {
       response.json({ players: listPlayerNames() });
     });
 
+    expressApp.get('/auth/status', (request: Request, response: Response) => {
+      const cookieHeader = request.headers.cookie;
+      const token = cookieHeader ? parseCookie(cookieHeader)[AUTH_COOKIE_NAME] : undefined;
+      const payload = token ? verifyToken(token) : null;
+
+      if (!payload) {
+        response.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      if (this.lobby.hasPlayer(payload.username)) {
+        response.status(409).json({ error: 'Already connected' });
+        return;
+      }
+
+      response.json({ ok: true });
+    });
+
     expressApp.post('/auth/login', async (request: Request, response: Response) => {
       const parsed = LoginBodySchema.safeParse(request.body);
       if (!parsed.success) {
@@ -73,6 +91,11 @@ export class GameServer {
 
         if (!payload) {
           callback(false, 401, 'Unauthorized');
+          return;
+        }
+
+        if (this.lobby.hasPlayer(payload.username)) {
+          callback(false, 409, 'Already connected');
           return;
         }
 

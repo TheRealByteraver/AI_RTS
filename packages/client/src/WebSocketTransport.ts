@@ -1,4 +1,5 @@
 import type { ClientCommand, GameTransport, LobbyState, ServerMessage } from '@rts/shared';
+import { checkConnectionStatus } from './AuthApi';
 
 const WS_URL = (import.meta.env.VITE_WS_URL as string | undefined) ?? 'ws://localhost:3000/ws';
 
@@ -6,7 +7,7 @@ const RECONNECT_BASE_DELAY_MS = 1000;
 const RECONNECT_MAX_DELAY_MS = 30000;
 const RECONNECT_MAX_ATTEMPTS = 6;
 
-export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected' | 'unauthenticated';
+export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected' | 'unauthenticated' | 'already_connected';
 type StatusCallback = (status: ConnectionStatus) => void;
 
 export class WebSocketTransport implements GameTransport {
@@ -60,7 +61,15 @@ export class WebSocketTransport implements GameTransport {
     socket.onclose = () => {
       if (this.intentionalDisconnect) return;
       if (!thisSocketOpened && !this.hasConnectedOnce) {
-        this.statusCallback?.('unauthenticated');
+        void checkConnectionStatus()
+          .then(statusCheck => {
+            if (statusCheck === 'already_connected') {
+              this.statusCallback?.('already_connected');
+            } else {
+              this.statusCallback?.('unauthenticated');
+            }
+          })
+          .catch(() => this.statusCallback?.('unauthenticated'));
         return;
       }
       this.scheduleReconnect();
