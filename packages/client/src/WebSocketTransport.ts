@@ -10,72 +10,72 @@ export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
 type StatusCallback = (status: ConnectionStatus) => void;
 
 export class WebSocketTransport implements GameTransport {
-  private ws: WebSocket | null = null;
+  private socket: WebSocket | null = null;
   private lobbyCallbacks = new Set<(state: LobbyState) => void>();
-  private statusCb: StatusCallback | null = null;
+  private statusCallback: StatusCallback | null = null;
   private reconnectAttempts = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private intentionalDisconnect = false;
 
-  onStatus(cb: StatusCallback): void {
-    this.statusCb = cb;
-  }
+  onStatus = (callback: StatusCallback): void => {
+    this.statusCallback = callback;
+  };
 
-  connect(): void {
+  connect = (): void => {
     this.intentionalDisconnect = false;
     this.openSocket();
-  }
+  };
 
-  private openSocket(): void {
-    const ws = new WebSocket(WS_URL);
-    this.ws = ws;
+  private openSocket = (): void => {
+    const socket = new WebSocket(WS_URL);
+    this.socket = socket;
 
-    ws.onopen = () => {
+    socket.onopen = () => {
       this.reconnectAttempts = 0;
-      this.statusCb?.('connected');
+      this.statusCallback?.('connected');
     };
 
-    ws.onmessage = event => {
+    socket.onmessage = event => {
       const message = JSON.parse(event.data as string) as ServerMessage;
       if (message.type === 'lobby_state') {
-        for (const cb of this.lobbyCallbacks) cb(message.state);
+        for (const callback of this.lobbyCallbacks) callback(message.state);
       } else if (message.type === 'error') {
         console.error('Server error:', message.message);
       }
     };
 
-    ws.onclose = () => {
+    socket.onclose = () => {
       if (this.intentionalDisconnect) return;
       this.scheduleReconnect();
     };
-  }
+  };
 
-  private scheduleReconnect(): void {
+  private scheduleReconnect = (): void => {
     if (this.reconnectAttempts >= RECONNECT_MAX_ATTEMPTS) {
-      this.statusCb?.('disconnected');
+      this.statusCallback?.('disconnected');
       return;
     }
 
-    this.statusCb?.('reconnecting');
+    this.statusCallback?.('reconnecting');
     const delay = Math.min(RECONNECT_BASE_DELAY_MS * 2 ** this.reconnectAttempts, RECONNECT_MAX_DELAY_MS);
     this.reconnectAttempts += 1;
     this.reconnectTimer = setTimeout(() => this.openSocket(), delay);
-  }
+  };
 
-  disconnect(): void {
+  disconnect = (): void => {
     this.intentionalDisconnect = true;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
-    this.ws?.close();
-    this.ws = null;
-  }
+    this.socket?.close();
+    this.socket = null;
+  };
 
-  send(cmd: ClientCommand): void {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(cmd));
+  send = (command: ClientCommand): void => {
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify(command));
     }
-  }
+  };
 
-  onLobbyState(cb: (state: LobbyState) => void): void {
-    this.lobbyCallbacks.add(cb);
-  }
+  onLobbyState = (callback: (state: LobbyState) => void): void => {
+    this.lobbyCallbacks.add(callback);
+  };
 }

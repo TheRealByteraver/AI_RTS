@@ -7,17 +7,18 @@ import { WebSocketTransport } from './WebSocketTransport';
 
 type Status = 'idle' | 'connecting' | 'auth_failed' | 'connected' | 'reconnecting' | 'disconnected';
 
-export function App() {
-  const [status, setStatus] = useState<Status>('idle');
+function App() {
+  // STATE
+  const [connectionStatus, setConnectionStatus] = useState<Status>('idle');
   const [username, setUsername] = useState<string | null>(null);
   const [lobbyState, setLobbyState] = useState<LobbyState | null>(null);
-  const transportRef = useRef<WebSocketTransport | null>(null);
 
+  // METHODS
   const handleLogin = async (name: string, password: string) => {
-    setStatus('connecting');
+    setConnectionStatus('connecting');
     const result = await loginRequest(name, password);
     if (!result.ok) {
-      setStatus('auth_failed');
+      setConnectionStatus('auth_failed');
       return;
     }
 
@@ -25,10 +26,10 @@ export function App() {
     const transport = new WebSocketTransport();
     transportRef.current = transport;
 
-    transport.onStatus(s => {
-      if (s === 'connected') setStatus('connected');
-      else if (s === 'reconnecting') setStatus('reconnecting');
-      else setStatus('disconnected');
+    transport.onStatus(status => {
+      if (status === 'connected') setConnectionStatus('connected');
+      else if (status === 'reconnecting') setConnectionStatus('reconnecting');
+      else setConnectionStatus('disconnected');
     });
     transport.onLobbyState(state => setLobbyState(state));
     transport.connect();
@@ -40,13 +41,16 @@ export function App() {
     await logoutRequest();
     setUsername(null);
     setLobbyState(null);
-    setStatus('idle');
+    setConnectionStatus('idle');
   };
 
-  if (status === 'connected' || status === 'reconnecting') {
+  // VARS
+  const transportRef = useRef<WebSocketTransport | null>(null);
+
+  if (connectionStatus === 'connected' || connectionStatus === 'reconnecting') {
     return (
       <div>
-        {status === 'reconnecting' && <p>Connection lost — reconnecting…</p>}
+        {connectionStatus === 'reconnecting' && <p>Connection lost — reconnecting…</p>}
         {lobbyState && username ? (
           <LobbyView state={lobbyState} currentUsername={username} onLogout={handleLogout} />
         ) : (
@@ -56,7 +60,7 @@ export function App() {
     );
   }
 
-  if (status === 'disconnected') {
+  if (connectionStatus === 'disconnected') {
     return (
       <div>
         <p>Disconnected — please log in again.</p>
@@ -68,8 +72,10 @@ export function App() {
   return (
     <LoginScreen
       onLogin={handleLogin}
-      isConnecting={status === 'connecting'}
-      error={status === 'auth_failed' ? 'Invalid username or password' : undefined}
+      isConnecting={connectionStatus === 'connecting'}
+      error={connectionStatus === 'auth_failed' ? 'Invalid username or password' : undefined}
     />
   );
 }
+
+export { App };

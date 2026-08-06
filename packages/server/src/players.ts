@@ -13,17 +13,17 @@ export type PlayerRecord = z.infer<typeof PlayerRecordSchema>;
 
 const PLAYERS_FILE_PATH = join(__dirname, '../../../players.json');
 
-function loadPlayers(): PlayerRecord[] {
-  const raw = readFileSync(PLAYERS_FILE_PATH, 'utf-8');
-  return PlayersFileSchema.parse(JSON.parse(raw));
-}
+const loadPlayers = (): PlayerRecord[] => {
+  const rawPlayersFile = readFileSync(PLAYERS_FILE_PATH, 'utf-8');
+  return PlayersFileSchema.parse(JSON.parse(rawPlayersFile));
+};
 
 const players = loadPlayers();
 
-export function listPlayerNames(): string[] {
-  return players.map(p => p.name);
-}
+export const listPlayerNames = (): string[] => {
+  return players.map(player => player.name);
+};
 
-export function findPlayer(name: string): PlayerRecord | undefined {
-  return players.find(p => p.name === name);
-}
+export const findPlayer = (name: string): PlayerRecord | undefined => {
+  return players.find(player => player.name === name);
+};

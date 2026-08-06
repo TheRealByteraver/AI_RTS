@@ -7,12 +7,17 @@ interface Props {
   error?: string;
 }
 
-export function LoginScreen({ onLogin, isConnecting, error }: Props) {
+function LoginScreen(props: Props) {
+  // PROPS
+  const { onLogin, isConnecting, error } = props;
+
+  // STATE
   const [players, setPlayers] = useState<string[]>([]);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loadError, setLoadError] = useState<string | undefined>();
 
+  // EFFECTS
   useEffect(() => {
     fetchPlayerNames()
       .then(names => {
@@ -22,8 +27,9 @@ export function LoginScreen({ onLogin, isConnecting, error }: Props) {
       .catch(() => setLoadError('Could not load player list'));
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // METHODS
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
     if (!username || !password) return;
     onLogin(username, password);
   };
@@ -37,7 +43,7 @@ export function LoginScreen({ onLogin, isConnecting, error }: Props) {
             Player:{' '}
             <select
               value={username}
-              onChange={e => setUsername(e.target.value)}
+              onChange={event => setUsername(event.target.value)}
               disabled={isConnecting || players.length === 0}
             >
               {players.map(name => (
@@ -54,7 +60,7 @@ export function LoginScreen({ onLogin, isConnecting, error }: Props) {
             <input
               type="password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={event => setPassword(event.target.value)}
               disabled={isConnecting}
               autoFocus
             />
@@ -70,3 +76,5 @@ export function LoginScreen({ onLogin, isConnecting, error }: Props) {
     </div>
   );
 }
+
+export { LoginScreen };

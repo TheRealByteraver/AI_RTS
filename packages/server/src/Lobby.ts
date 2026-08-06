@@ -9,19 +9,19 @@ interface Connection {
 export class Lobby {
   private connections = new Map<string, Connection>();
 
-  add(connectionId: string, username: string, socket: WebSocket): void {
+  add = (connectionId: string, username: string, socket: WebSocket): void => {
     this.connections.set(connectionId, { username, socket });
-  }
+  };
 
-  remove(connectionId: string): void {
+  remove = (connectionId: string): void => {
     this.connections.delete(connectionId);
-  }
+  };
 
-  getState(): LobbyState {
-    return { players: [...this.connections.values()].map(c => c.username) };
-  }
+  getState = (): LobbyState => {
+    return { players: [...this.connections.values()].map(connection => connection.username) };
+  };
 
-  broadcast(): void {
+  broadcast = (): void => {
     const message: ServerMessage = { type: 'lobby_state', state: this.getState() };
     const payload = JSON.stringify(message);
     for (const { socket } of this.connections.values()) {
@@ -29,5 +29,5 @@ export class Lobby {
         socket.send(payload);
       }
     }
-  }
+  };
 }

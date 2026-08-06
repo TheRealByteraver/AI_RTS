@@ -8,32 +8,32 @@ interface ErrorResponse {
   error?: string;
 }
 
-export async function fetchPlayerNames(): Promise<string[]> {
-  const res = await fetch(`${API_URL}/auth/players`, { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to load player list');
-  const data = (await res.json()) as PlayersResponse;
+export const fetchPlayerNames = async (): Promise<string[]> => {
+  const response = await fetch(`${API_URL}/auth/players`, { credentials: 'include' });
+  if (!response.ok) throw new Error('Failed to load player list');
+  const data = (await response.json()) as PlayersResponse;
   return data.players;
-}
+};
 
-export async function login(
+export const login = async (
   username: string,
   password: string
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const res = await fetch(`${API_URL}/auth/login`, {
+): Promise<{ ok: true } | { ok: false; error: string }> => {
+  const response = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
   });
 
-  if (!res.ok) {
-    const data = (await res.json().catch(() => null)) as ErrorResponse | null;
+  if (!response.ok) {
+    const data = (await response.json().catch(() => null)) as ErrorResponse | null;
     return { ok: false, error: data?.error ?? 'Login failed' };
   }
 
   return { ok: true };
-}
+};
 
-export async function logout(): Promise<void> {
+export const logout = async (): Promise<void> => {
   await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
-}
+};

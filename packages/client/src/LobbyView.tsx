@@ -6,7 +6,10 @@ interface Props {
   onLogout: () => void;
 }
 
-export function LobbyView({ state, currentUsername, onLogout }: Props) {
+function LobbyView(props: Props) {
+  // PROPS
+  const { state, currentUsername, onLogout } = props;
+
   return (
     <div>
       <h1>Lobby</h1>
@@ -16,3 +19,5 @@ export function LobbyView({ state, currentUsername, onLogout }: Props) {
     </div>
   );
 }
+
+export { LobbyView };

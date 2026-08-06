@@ -2,11 +2,11 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { findPlayer } from './players';
 
-function requireEnv(name: string): string {
+const requireEnv = (name: string): string => {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is not set`);
   return value;
-}
+};
 
 const JWT_SECRET: string = requireEnv('JWT_SECRET_KEY');
 
@@ -18,17 +18,17 @@ export interface TokenPayload {
   username: string;
 }
 
-export async function verifyCredentials(username: string, password: string): Promise<boolean> {
+export const verifyCredentials = async (username: string, password: string): Promise<boolean> => {
   const player = findPlayer(username);
   if (!player) return false;
   return bcrypt.compare(password, player.passwordHash);
-}
+};
 
-export function signToken(username: string): string {
+export const signToken = (username: string): string => {
   return jwt.sign({ username }, JWT_SECRET, { algorithm: 'HS256', expiresIn: TOKEN_TTL_SECONDS });
-}
+};
 
-export function verifyToken(token: string): TokenPayload | null {
+export const verifyToken = (token: string): TokenPayload | null => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
     if (typeof decoded === 'object' && decoded !== null && typeof decoded.username === 'string') {
@@ -38,4 +38,4 @@ export function verifyToken(token: string): TokenPayload | null {
   } catch {
     return null;
   }
-}
+};

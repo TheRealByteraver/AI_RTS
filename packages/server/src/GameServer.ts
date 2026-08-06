@@ -29,41 +29,41 @@ export class GameServer {
   private lobby = new Lobby();
 
   constructor(port: number, clientOrigin: string) {
-    const app = express();
-    app.use(cors({ origin: clientOrigin, credentials: true }));
-    app.use(express.json());
+    const expressApp = express();
+    expressApp.use(cors({ origin: clientOrigin, credentials: true }));
+    expressApp.use(express.json());
 
-    app.get('/auth/players', (_req: Request, res: Response) => {
-      res.json({ players: listPlayerNames() });
+    expressApp.get('/auth/players', (_request: Request, response: Response) => {
+      response.json({ players: listPlayerNames() });
     });
 
-    app.post('/auth/login', async (req: Request, res: Response) => {
-      const parsed = LoginBodySchema.safeParse(req.body);
+    expressApp.post('/auth/login', async (request: Request, response: Response) => {
+      const parsed = LoginBodySchema.safeParse(request.body);
       if (!parsed.success) {
-        res.status(400).json({ error: 'Invalid request' });
+        response.status(400).json({ error: 'Invalid request' });
         return;
       }
 
       const { username, password } = parsed.data;
       const credentialsOk = await verifyCredentials(username, password);
       if (!credentialsOk) {
-        res.status(401).json({ error: 'Invalid username or password' });
+        response.status(401).json({ error: 'Invalid username or password' });
         return;
       }
 
       const token = signToken(username);
-      res.cookie(AUTH_COOKIE_NAME, token, { ...COOKIE_OPTIONS, maxAge: AUTH_COOKIE_MAX_AGE_MS });
-      res.json({ username });
+      response.cookie(AUTH_COOKIE_NAME, token, { ...COOKIE_OPTIONS, maxAge: AUTH_COOKIE_MAX_AGE_MS });
+      response.json({ username });
     });
 
-    app.post('/auth/logout', (_req: Request, res: Response) => {
-      res.clearCookie(AUTH_COOKIE_NAME, COOKIE_OPTIONS);
-      res.json({ ok: true });
+    expressApp.post('/auth/logout', (_request: Request, response: Response) => {
+      response.clearCookie(AUTH_COOKIE_NAME, COOKIE_OPTIONS);
+      response.json({ ok: true });
     });
 
-    const httpServer = createServer(app);
+    const httpServer = createServer(expressApp);
 
-    const wss = new WebSocketServer({
+    const webSocketServer = new WebSocketServer({
       server: httpServer,
       path: '/ws',
       verifyClient: (info, callback) => {
@@ -82,8 +82,8 @@ export class GameServer {
     });
 
     // Renews the JWT cookie on every successful (re)connect, per DECISIONS.md §8.
-    wss.on('headers', (headers, req) => {
-      const username = (req as AuthenticatedRequest).username;
+    webSocketServer.on('headers', (headers, request) => {
+      const username = (request as AuthenticatedRequest).username;
       if (!username) return;
 
       const refreshed = signToken(username);
@@ -94,8 +94,8 @@ export class GameServer {
       headers.push(`Set-Cookie: ${cookie}`);
     });
 
-    wss.on('connection', (socket, req) => {
-      const username = (req as AuthenticatedRequest).username;
+    webSocketServer.on('connection', (socket, request) => {
+      const username = (request as AuthenticatedRequest).username;
       if (!username) {
         socket.close(1008, 'Unauthorized');
         return;
