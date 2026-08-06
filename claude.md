@@ -1,16 +1,48 @@
 # CLAUDE.md — RTS Engine Project
 
+## Generated outputs — do not use as source of truth
+
+Do NOT use `readme.md` as a source of truth. It is a generated artifact 
+that describes the code. It may be outdated. Never make decisions based on it.
+
 ## Essential reading
+
+### Before changing or adding code
 
 Before doing anything in this repo, read the following files in full:
 
-- @DOCS/DECISIONS.md — single source of truth for all architecture and design decisions
-- @DOCS/CONVENTIONS.MD - coding conventions to follow
+- @docs/decisions.md — single source of truth for all architecture and design decisions
+- @docs/conventions.md - coding conventions to follow
 
 Do not suggest alternatives to settled decisions without explicitly flagging the conflict
 and explaining why the settled decision should be reconsidered.
 
----
+### After every task
+
+After completing any task, perform all actions described in this section.
+
+#### Update the readme.md file
+1. Re-read all the files you created or modified
+2. Update `readme.md` to accurately reflect the current state of the code
+   - Add or update the section for any system you changed
+   - Remove descriptions of anything you deleted
+   - Base your description on the actual code, not on what was in readme.md before
+
+Use the following structure for the `readme.md` file:
+- Main title: `RTS Project`
+- A paragraph of 120 to 400 words describing the project
+- sections describing each system
+
+Write sections for every system in the list below:
+- authentication flow (http and websocket)
+
+Use the structure below for every section describing a system:
+  - A title with the name of the system
+  - What it does (one paragraph)
+  - Its boundaries (what it is not responsible for)
+  - Key design decisions and why
+  - If appropriate, logic flow in steps
+
 
 ## Project overview
 
@@ -21,71 +53,3 @@ Target: a basic but functioning version in 4–8 weeks.
 - **Monorepo** — packages/shared, packages/server, packages/client
 - **Language** — TypeScript end to end
 - **Runtime** — Node.js (server), browser (client)
-
----
-
-## Repo structure
-
-```
-/rts-engine
-  /packages
-    /shared      # GameState types, Zod schemas, transport interface
-    /server      # Node.js game loop, WebSocket handling, auth
-    /client      # React app (UI chrome only) + renderer
-  /data
-    /races       # JSON5 unit/building definitions
-  DECISIONS.md
-  CLAUDE.md
-```
-
----
-
-## Settled decisions — do not relitigate
-
-These are recorded in full in DECISIONS.md. Short-form reminders:
-
-- **Rendering** — React for UI chrome only; game world rendered via ASCII (MVP) then Canvas/PixiJS. Never render game world in React.
-- **ECS** — use an entity-component-system (bitECS or miniplex) for units. No 250 React components.
-- **Networking** — WebSocket, server is authoritative, full state broadcast at ~20 Hz. No deltas in v1.
-- **Data format** — JSON5 + Zod for all game content definitions.
-- **Auth** — JWT in an httpOnly cookie (HS256). One persistent WebSocket per player per session. JWT verified once at upgrade handshake only.
-
----
-
-## Coding conventions
-
-- **TypeScript strict mode** — no `any`, no unchecked casts
-- **Zod for all external data** — never use `as SomeType` on unvalidated input
-- **Shared types live in /packages/shared** — never duplicate types across packages
-- **No game logic in the renderer** — simulation state is plain data; renderer is a pure function of state
-- **All networking behind GameTransport interface** — no direct WebSocket calls in game logic
-
----
-
-## Current milestone
-
-**M0 — "Hello multiplayer world"**
-
-Goal: prove the full pipe works. No game logic, no grid, no units.
-
-Scope:
-- Login form → POST /auth/login → JWT cookie
-- WebSocket connection opened immediately after login
-- Lobby: see other logged in players
-- Graceful disconnection message if WebSocket closes unexpectedly
-- Automatic client-side reconnection with exponential backoff
-
-Explicitly out of scope for M0: grid, units, game logic, chat, account creation UI.
-
----
-
-## Running the project
-
-_(To be filled in once M0 scaffolding is complete.)_
-
----
-
-## Open questions
-
-See the "Open threads" section in DECISIONS.md for unresolved decisions.
-Do not make choices on open threads without flagging them for human review first.

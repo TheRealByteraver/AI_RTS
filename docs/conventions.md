@@ -2,10 +2,16 @@
 
 ## Conventions for both the frontend and the backend
 
-- Throughout the codebase, only use arrow style functions.
-- Never use single character variable names, but use full words instead as much as possible. If different variables end up having the same name, use leading underscores for the narrower-scoped variables. For further naming conflicts, abbreviate the variable names by omitting the vowels. As a last resort, fall back to single character variable names.
+- only use arrow style functions
+- No single character variable names but full words. In case of variable naming conflicts, use leading underscores for the narrower-scoped variables. For further naming conflicts, abbreviate the variable names by omitting the vowels. As a last resort, fall back to single character variable names.
 
-## Frontend only coding conventions
+- **TypeScript strict mode** — no `any`, no unchecked casts
+- **Zod for all external data** — never use `as SomeType` on unvalidated input
+- **Shared types live in /packages/shared** — never duplicate types across packages
+- **No game logic in the renderer** — simulation state is plain data; renderer is a pure function of state
+- **All networking behind GameTransport interface** — no direct WebSocket calls in game logic
+
+## Frontend coding conventions
 
 - In every React component, use the following section structure and comments (omit a section if it is empty):
 1. `// PROPS` — first line of any component that receives props, immediately followed by destructuring of `props`. The component must accept a single argument `props: Props`. The `Props` type must be defined directly above the component declaration.

@@ -71,11 +71,13 @@ _Last updated: 2026-06-22_
 ```
 /rts-engine
   /packages
-    /shared      # GameState types, Zod schemas, unit/terrain defs, GameTransport interface
-    /server      # Node.js game loop, authoritative simulation, WebSocket handling
-    /client      # React app + renderer (ASCII now, Pixi later)
+    /shared      # GameState types, Zod schemas, transport interface
+    /server      # Node.js game loop, WebSocket handling, auth
+    /client      # React app (UI chrome only) + renderer
   /data
-    /races       # JSON5 unit/building definitions, validated against /packages/shared schemas
+    /races       # JSON5 unit/building definitions
+  /docs          # context for claude code
+  claude.md      # main instructions for claude code
   package.json   # workspace root
 ```
 
