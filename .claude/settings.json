@@ -1,29 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pnpm install --frozen-lockfile)",
-      "Bash(pnpm --filter @rts/client build)",
-      "Bash(pnpm --filter @rts/server build)",
-      "Bash(pnpm --filter @rts/client lint)",
-      "Bash(pnpm --filter @rts/server lint)",
-      "Bash(pnpm run typecheck)",
-      "Bash(npx tsc --noEmit)",
-      "Bash(gh pr create:*)",
-      "Bash(gh pr view:*)",
-      "Bash(gh pr list:*)",
-      "Bash(gh pr comment:*)"
-    ],
-    "deny": [
+      "Bash(pnpm install)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm --filter:*)",
+      "Bash(pnpm run:*)",
       "Bash(pnpm exec:*)",
-      "Bash(pnpm dlx:*)",
-      "Bash(pnpm add:*)",
-      "Bash(pnpm remove:*)",
-      "Bash(pnpm publish:*)",
-      "Bash(gh api:*)",
-      "Bash(gh secret:*)",
-      "Bash(gh auth:*)",
-      "Bash(gh repo delete:*)",
-      "Bash(gh workflow:*)"
+      "Bash(npx tsc:*)",
+      "Bash(pnpm lint:*)"
     ]
   }
 }
