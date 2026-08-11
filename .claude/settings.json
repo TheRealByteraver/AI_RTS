@@ -6,6 +6,9 @@
       "Bash(pnpm --filter:*)",
       "Bash(pnpm run:*)",
       "Bash(pnpm exec:*)",
+      "Bash(pnpm -r:*)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm build)",
       "Bash(npx tsc:*)",
       "Bash(pnpm lint:*)"
     ]
