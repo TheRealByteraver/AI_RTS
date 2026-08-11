@@ -19,7 +19,6 @@
       "Bash(pnpm add:*)",
       "Bash(pnpm remove:*)",
       "Bash(pnpm publish:*)",
-      "Bash(pnpm install *)",
       "Bash(gh api:*)",
       "Bash(gh secret:*)",
       "Bash(gh auth:*)",
