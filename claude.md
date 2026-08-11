@@ -43,6 +43,13 @@ Use the structure below for every section describing a system:
   - Key design decisions and why
   - If appropriate, logic flow in steps
 
+## Pull request descriptions
+
+- When opening a pull request, always write a complete description in the
+PR body itself — not just in issue comments. Include: what changed and why,
+how you tested it, and any risks or follow-ups. Assume the reviewer will
+only read the PR, not the originating issue thread.
+- Link the PR to the corresponding issue on github
 
 ## Project overview
 
