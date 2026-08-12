@@ -9,7 +9,6 @@ import { z } from 'zod';
 import type { ClientCommand } from '@rts/shared';
 import { AUTH_COOKIE_MAX_AGE_MS, AUTH_COOKIE_NAME, signToken, verifyCredentials, verifyToken } from './auth';
 import { Lobby } from './Lobby';
-import { listPlayerNames } from './players';
 
 const LoginBodySchema = z.object({
   username: z.string().min(1),
@@ -32,10 +31,6 @@ export class GameServer {
     const expressApp = express();
     expressApp.use(cors({ origin: clientOrigin, credentials: true }));
     expressApp.use(express.json());
-
-    expressApp.get('/auth/players', (_request: Request, response: Response) => {
-      response.json({ players: listPlayerNames() });
-    });
 
     expressApp.get('/auth/status', (request: Request, response: Response) => {
       const cookieHeader = request.headers.cookie;

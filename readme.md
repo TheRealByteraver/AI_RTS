@@ -20,6 +20,7 @@ The auth system is not responsible for authorising individual game actions (comm
 - **HS256 with `JWT_SECRET_KEY` from env** — simple to operate with a single server; an upgrade path to RS256 exists if multi-server coordination is ever needed.
 - **24-hour expiry, renewed on every successful WebSocket (re)connect** — a player who stays active never gets logged out mid-session.
 - **Player credentials in `players.json`, hashed with bcrypt** — avoids a database for M0. The file is loaded once at startup, validated with Zod, and kept in memory.
+- **Player names hardcoded in the client (`packages/client/src/players.ts`)** — copied from the `name` fields in `players.json`. There is no `/auth/players` endpoint; the login form's player `select` is populated from this local list rather than an HTTP round trip, since the roster is small and fixed for M0.
 - **WebSocket connection as presence source of truth** — the lobby tracks who is online via live socket objects, not token validity. A duplicate-connection attempt returns HTTP 409 both at the `/auth/status` check and at the WebSocket upgrade, preventing two tabs from fighting over the same identity.
 - **Auth happens once at upgrade; messages are not re-authenticated** — identity is derived from which socket a message arrived on, not from message contents.
 
