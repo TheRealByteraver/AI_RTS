@@ -1,13 +1,25 @@
-import type { ClientCommand, GameTransport, LobbyState, ServerMessage } from '@rts/shared';
+import type {
+  ClientCommand,
+  GameTransport,
+  LobbyState,
+  ServerMessage,
+} from '@rts/shared';
 import { checkConnectionStatus } from './AuthApi';
 
-const WS_URL = (import.meta.env.VITE_WS_URL as string | undefined) ?? 'ws://localhost:3000/ws';
+const WS_URL =
+  (import.meta.env.VITE_WS_URL as string | undefined) ??
+  'ws://localhost:3000/ws';
 
 const RECONNECT_BASE_DELAY_MS = 1000;
 const RECONNECT_MAX_DELAY_MS = 30000;
 const RECONNECT_MAX_ATTEMPTS = 6;
 
-export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected' | 'unauthenticated' | 'already_connected';
+export type ConnectionStatus =
+  | 'connected'
+  | 'reconnecting'
+  | 'disconnected'
+  | 'unauthenticated'
+  | 'already_connected';
 type StatusCallback = (status: ConnectionStatus) => void;
 
 export class WebSocketTransport implements GameTransport {
@@ -47,10 +59,11 @@ export class WebSocketTransport implements GameTransport {
       this.statusCallback?.('connected');
     };
 
-    socket.onmessage = event => {
+    socket.onmessage = (event) => {
       const message = JSON.parse(event.data as string) as ServerMessage;
       if (message.type === 'welcome') {
-        for (const callback of this.welcomeCallbacks) callback(message.username);
+        for (const callback of this.welcomeCallbacks)
+          callback(message.username);
       } else if (message.type === 'lobby_state') {
         for (const callback of this.lobbyCallbacks) callback(message.state);
       } else if (message.type === 'error') {
@@ -62,7 +75,7 @@ export class WebSocketTransport implements GameTransport {
       if (this.intentionalDisconnect) return;
       if (!thisSocketOpened && !this.hasConnectedOnce) {
         void checkConnectionStatus()
-          .then(statusCheck => {
+          .then((statusCheck) => {
             if (statusCheck === 'already_connected') {
               this.statusCallback?.('already_connected');
             } else {
@@ -83,7 +96,10 @@ export class WebSocketTransport implements GameTransport {
     }
 
     this.statusCallback?.('reconnecting');
-    const delay = Math.min(RECONNECT_BASE_DELAY_MS * 2 ** this.reconnectAttempts, RECONNECT_MAX_DELAY_MS);
+    const delay = Math.min(
+      RECONNECT_BASE_DELAY_MS * 2 ** this.reconnectAttempts,
+      RECONNECT_MAX_DELAY_MS,
+    );
     this.reconnectAttempts += 1;
     this.reconnectTimer = setTimeout(() => this.openSocket(), delay);
   };

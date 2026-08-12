@@ -20,9 +20,9 @@ function LoginScreen(props: Props) {
   // EFFECTS
   useEffect(() => {
     fetchPlayerNames()
-      .then(names => {
+      .then((names) => {
         setPlayers(names);
-        setUsername(current => current || names[0] || '');
+        setUsername((current) => current || names[0] || '');
       })
       .catch(() => setLoadError('Could not load player list'));
   }, []);
@@ -43,10 +43,10 @@ function LoginScreen(props: Props) {
             Player:{' '}
             <select
               value={username}
-              onChange={event => setUsername(event.target.value)}
+              onChange={(event) => setUsername(event.target.value)}
               disabled={isConnecting || players.length === 0}
             >
-              {players.map(name => (
+              {players.map((name) => (
                 <option key={name} value={name}>
                   {name}
                 </option>
@@ -60,9 +60,8 @@ function LoginScreen(props: Props) {
             <input
               type="password"
               value={password}
-              onChange={event => setPassword(event.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
               disabled={isConnecting}
-              autoFocus
             />
           </label>
         </div>

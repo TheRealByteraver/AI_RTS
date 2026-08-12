@@ -1,5 +1,9 @@
 packages:
   - 'packages/*'
+
+# Dependencies allowed to run install scripts. pnpm blocks all of them by
+# default; esbuild needs its postinstall to fetch the platform binary vite
+# builds on. pnpm appends new entries here with a placeholder value whenever it
+# blocks a script — replace the placeholder with true or false to resolve it.
 allowBuilds:
-  bcrypt: set this to true or false
   esbuild: true

@@ -7,7 +7,11 @@
     "dev:server": "pnpm --filter @rts/server dev",
     "dev:client": "pnpm --filter @rts/client dev",
     "typecheck": "pnpm -r exec tsc --noEmit",
-    "build": "pnpm -r build"
+    "build": "pnpm -r build",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format --write .",
+    "check": "biome check ."
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.7",
