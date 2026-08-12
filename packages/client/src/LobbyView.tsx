@@ -14,7 +14,9 @@ function LobbyView(props: Props) {
     <div>
       <h1>Lobby</h1>
       <p>Logged in as {currentUsername}</p>
-      <button onClick={onLogout}>Log out</button>
+      <button type="button" onClick={onLogout}>
+        Log out
+      </button>
       <pre>{JSON.stringify(state, null, 2)}</pre>
     </div>
   );

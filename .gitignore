@@ -4,3 +4,5 @@ dist/
 *.env.local
 players.md
 .vite/
+packages/shared/tsconfig.tsbuildinfo
+

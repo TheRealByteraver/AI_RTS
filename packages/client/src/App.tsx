@@ -1,16 +1,24 @@
-import { useEffect, useRef, useState } from 'react';
 import type { LobbyState } from '@rts/shared';
-import { login as loginRequest, logout as logoutRequest } from './AuthApi';
+import { useEffect, useRef, useState } from 'react';
 import { AlreadyConnectedScreen } from './AlreadyConnectedScreen';
+import { login as loginRequest, logout as logoutRequest } from './AuthApi';
 import { LobbyView } from './LobbyView';
 import { LoginScreen } from './LoginScreen';
 import { WebSocketTransport } from './WebSocketTransport';
 
-type Status = 'connecting' | 'unauthenticated' | 'auth_failed' | 'connected' | 'reconnecting' | 'disconnected' | 'already_connected';
+type Status =
+  | 'connecting'
+  | 'unauthenticated'
+  | 'auth_failed'
+  | 'connected'
+  | 'reconnecting'
+  | 'disconnected'
+  | 'already_connected';
 
 function App() {
   // STATE
-  const [connectionStatus, setConnectionStatus] = useState<Status>('connecting');
+  const [connectionStatus, setConnectionStatus] =
+    useState<Status>('connecting');
   const [username, setUsername] = useState<string | null>(null);
   const [lobbyState, setLobbyState] = useState<LobbyState | null>(null);
 
@@ -22,10 +30,11 @@ function App() {
     const transport = new WebSocketTransport();
     transportRef.current = transport;
 
-    transport.onStatus(status => {
+    transport.onStatus((status) => {
       if (status === 'connected') setConnectionStatus('connected');
       else if (status === 'reconnecting') setConnectionStatus('reconnecting');
-      else if (status === 'already_connected') setConnectionStatus('already_connected');
+      else if (status === 'already_connected')
+        setConnectionStatus('already_connected');
       else if (status === 'unauthenticated') {
         setUsername(null);
         setConnectionStatus('unauthenticated');
@@ -33,8 +42,8 @@ function App() {
         setConnectionStatus('disconnected');
       }
     });
-    transport.onWelcome(name => setUsername(name));
-    transport.onLobbyState(state => setLobbyState(state));
+    transport.onWelcome((name) => setUsername(name));
+    transport.onLobbyState((state) => setLobbyState(state));
     transport.connect();
 
     return () => {
@@ -73,15 +82,26 @@ function App() {
   };
 
   if (connectionStatus === 'already_connected') {
-    return <AlreadyConnectedScreen onRetry={handleRetry} onGoToLogin={handleGoToLogin} />;
+    return (
+      <AlreadyConnectedScreen
+        onRetry={handleRetry}
+        onGoToLogin={handleGoToLogin}
+      />
+    );
   }
 
   if (connectionStatus === 'connected' || connectionStatus === 'reconnecting') {
     return (
       <div>
-        {connectionStatus === 'reconnecting' && <p>Connection lost — reconnecting…</p>}
+        {connectionStatus === 'reconnecting' && (
+          <p>Connection lost — reconnecting…</p>
+        )}
         {lobbyState && username ? (
-          <LobbyView state={lobbyState} currentUsername={username} onLogout={handleLogout} />
+          <LobbyView
+            state={lobbyState}
+            currentUsername={username}
+            onLogout={handleLogout}
+          />
         ) : (
           <p>Connecting to lobby…</p>
         )}
@@ -106,7 +126,11 @@ function App() {
     <LoginScreen
       onLogin={handleLogin}
       isConnecting={false}
-      error={connectionStatus === 'auth_failed' ? 'Invalid username or password' : undefined}
+      error={
+        connectionStatus === 'auth_failed'
+          ? 'Invalid username or password'
+          : undefined
+      }
     />
   );
 }

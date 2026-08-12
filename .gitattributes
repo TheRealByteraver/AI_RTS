@@ -1,0 +1,7 @@
+# Normalise line endings. Files are stored LF in the repository and checked out
+# LF on every platform, so Biome's formatter (which writes LF) agrees with the
+# working tree on Windows as well as on the Linux CI runner.
+* text=auto eol=lf
+
+# Lockfiles are generated; keep them out of diffs and merge conflicts.
+pnpm-lock.yaml -diff linguist-generated
