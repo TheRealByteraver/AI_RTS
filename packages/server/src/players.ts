@@ -20,10 +20,6 @@ const loadPlayers = (): PlayerRecord[] => {
 
 const players = loadPlayers();
 
-export const listPlayerNames = (): string[] => {
-  return players.map(player => player.name);
-};
-
 export const findPlayer = (name: string): PlayerRecord | undefined => {
   return players.find(player => player.name === name);
 };

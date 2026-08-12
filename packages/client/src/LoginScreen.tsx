@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { fetchPlayerNames } from './AuthApi';
+import { useState } from 'react';
+import { PLAYER_NAMES } from './players';
 
 interface Props {
   onLogin: (username: string, password: string) => void;
@@ -12,20 +12,8 @@ function LoginScreen(props: Props) {
   const { onLogin, isConnecting, error } = props;
 
   // STATE
-  const [players, setPlayers] = useState<string[]>([]);
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(PLAYER_NAMES[0] ?? '');
   const [password, setPassword] = useState('');
-  const [loadError, setLoadError] = useState<string | undefined>();
-
-  // EFFECTS
-  useEffect(() => {
-    fetchPlayerNames()
-      .then((names) => {
-        setPlayers(names);
-        setUsername((current) => current || names[0] || '');
-      })
-      .catch(() => setLoadError('Could not load player list'));
-  }, []);
 
   // METHODS
   const handleSubmit = (event: React.FormEvent) => {
@@ -44,9 +32,9 @@ function LoginScreen(props: Props) {
             <select
               value={username}
               onChange={(event) => setUsername(event.target.value)}
-              disabled={isConnecting || players.length === 0}
+              disabled={isConnecting || PLAYER_NAMES.length === 0}
             >
-              {players.map((name) => (
+              {PLAYER_NAMES.map((name) => (
                 <option key={name} value={name}>
                   {name}
                 </option>
@@ -70,7 +58,6 @@ function LoginScreen(props: Props) {
           {isConnecting ? 'Connecting…' : 'Connect'}
         </button>
       </form>
-      {loadError && <p>{loadError}</p>}
       {error && <p>{error}</p>}
     </div>
   );
