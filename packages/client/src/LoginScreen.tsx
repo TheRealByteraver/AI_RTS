@@ -29,19 +29,31 @@ function LoginScreen(props: Props) {
         <div>
           <label>
             Player:{' '}
+            <select
+              name="player-select"
+              value={PLAYER_NAMES.includes(username) ? username : ''}
+              onChange={(event) => setUsername(event.target.value)}
+              disabled={isConnecting}
+            >
+              <option value="">-- choose player --</option>
+              {PLAYER_NAMES.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div>
+          <label>
+            Username:{' '}
             <input
-              list="players"
               name="username"
               autoComplete="username"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               disabled={isConnecting}
             />
-            <datalist id="players">
-              {PLAYER_NAMES.map((name) => (
-                <option key={name} value={name} />
-              ))}
-            </datalist>
           </label>
         </div>
         <div>
