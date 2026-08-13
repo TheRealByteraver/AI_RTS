@@ -7,6 +7,22 @@ interface Props {
   error?: string;
 }
 
+// Keeps the field in the DOM and focusable-by-the-browser (so password
+// managers still see and fill it) while hiding it from sighted users.
+// display:none / visibility:hidden are avoided because some browsers skip
+// autofill for elements hidden that way.
+const VISUALLY_HIDDEN_STYLE: React.CSSProperties = {
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  padding: 0,
+  margin: '-1px',
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+};
+
 function LoginScreen(props: Props) {
   // PROPS
   const { onLogin, isConnecting, error } = props;
@@ -44,18 +60,16 @@ function LoginScreen(props: Props) {
             </select>
           </label>
         </div>
-        <div>
-          <label>
-            Username:{' '}
-            <input
-              name="username"
-              autoComplete="username"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              disabled={isConnecting}
-            />
-          </label>
-        </div>
+        <input
+          name="username"
+          autoComplete="username"
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
+          disabled={isConnecting}
+          aria-hidden="true"
+          tabIndex={-1}
+          style={VISUALLY_HIDDEN_STYLE}
+        />
         <div>
           <label>
             Password:{' '}
