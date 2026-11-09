@@ -128,9 +128,11 @@ export class GameServer {
       socket.on('message', rawMessage => {
         try {
           const command = JSON.parse(rawMessage.toString()) as ClientCommand;
+          console.log('received command', command, ' from player ', username);
           void command; // no commands handled in M0
-        } catch {
+        } catch (error) {
           // ignore malformed messages
+          console.error(error);
         }
       });
 
