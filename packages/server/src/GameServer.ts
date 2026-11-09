@@ -6,8 +6,10 @@ import { parse as parseCookie, serialize as serializeCookie } from 'cookie';
 import express, { type Request, type Response } from 'express';
 import { WebSocketServer } from 'ws';
 import { z } from 'zod';
-import type { ClientCommand } from '@rts/shared';
+import { type ClientCommand, ClientCommandSchema } from '@rts/shared';
 import { AUTH_COOKIE_MAX_AGE_MS, AUTH_COOKIE_NAME, signToken, verifyCredentials, verifyToken } from './auth';
+import { Games } from './Games';
+import { Invitations } from './Invitations';
 import { Lobby } from './Lobby';
 
 const LoginBodySchema = z.object({
@@ -26,6 +28,8 @@ type AuthenticatedRequest = IncomingMessage & { username?: string };
 
 export class GameServer {
   private lobby = new Lobby();
+  private invitations = new Invitations(this.lobby);
+  private games = new Games(this.lobby);
 
   constructor(port: number, clientOrigin: string) {
     const expressApp = express();
@@ -126,18 +130,29 @@ export class GameServer {
       this.lobby.broadcast();
 
       socket.on('message', rawMessage => {
+        let json: unknown;
         try {
-          const command = JSON.parse(rawMessage.toString()) as ClientCommand;
-          console.log('received command', command, ' from player ', username);
-          void command; // no commands handled in M0
+          json = JSON.parse(rawMessage.toString());
         } catch (error) {
           // ignore malformed messages
           console.error(error);
+          return;
         }
+
+        const parsed = ClientCommandSchema.safeParse(json);
+        if (!parsed.success) {
+          console.error('invalid command from player', username, parsed.error.issues);
+          return;
+        }
+
+        console.log('received command', parsed.data, ' from player ', username);
+        this.handleCommand(username, parsed.data);
       });
 
       socket.on('close', () => {
         this.lobby.remove(connectionId);
+        this.games.leave(username);
+        this.invitations.withdrawPlayer(username);
         console.log(`${username} left the lobby`);
         this.lobby.broadcast();
       });
@@ -147,4 +162,33 @@ export class GameServer {
       console.log(`Server listening on :${port}`);
     });
   }
+
+  // Identity comes from the socket the command arrived on, never from its contents.
+  private handleCommand = (username: string, command: ClientCommand): void => {
+    switch (command.type) {
+      case 'PING':
+        break;
+      case 'invite_players':
+        this.invitations.create(username, command.invitationId, command.invitees);
+        break;
+      case 'respond_to_invitation':
+        this.invitations.respond(username, command.invitationId, command.accepted);
+        break;
+      case 'cancel_invitation':
+        this.invitations.cancel(username, command.invitationId);
+        break;
+      case 'start_game': {
+        const players = this.invitations.claimForGame(username, command.invitationId);
+        if (!players) break;
+        this.games.start(players);
+        // The new players are busy now: drop them from any other invitations.
+        for (const player of players) this.invitations.withdrawPlayer(player);
+        this.lobby.broadcast();
+        break;
+      }
+      case 'leave_game':
+        if (this.games.leave(username)) this.lobby.broadcast();
+        break;
+    }
+  };
 }
