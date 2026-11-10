@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { InvitationReceivedModal } from './InvitationReceivedModal';
 import { InvitePlayerModal } from './InvitePlayerModal';
 import type { IncomingInvitation, OutgoingInvitation } from './invitations';
+import { PlayerList } from './PlayerList';
 
 type Props = {
   state: LobbyState;
@@ -40,7 +41,7 @@ const LobbyView = (props: Props) => {
   };
 
   // VARS
-  // Players in a game can't be invited.
+  // Only idle players can be invited (not in a game or another invitation).
   const invitablePlayers = state.players
     .filter(
       (player) =>
@@ -51,14 +52,14 @@ const LobbyView = (props: Props) => {
   return (
     <div>
       <h1>Lobby</h1>
-      <p>Logged in as {currentUsername}</p>
+      <p>Hi {currentUsername}, welcome to the lobby!</p>
       <button type="button" onClick={() => setIsInviteModalOpen(true)}>
         Start Game
       </button>{' '}
       <button type="button" onClick={onLogout}>
         Log out
       </button>
-      <pre>{JSON.stringify(state, null, 2)}</pre>
+      <PlayerList players={state.players} />
       {isInviteModalOpen && (
         <InvitePlayerModal
           players={invitablePlayers}

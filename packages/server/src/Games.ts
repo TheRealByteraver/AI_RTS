@@ -1,19 +1,25 @@
 import { randomUUID } from 'node:crypto';
 import type { Lobby } from './Lobby';
 
-// Tracks running games: which players are in which game. A player who is in a
-// game has lobby status 'playing'; leaving puts them back to 'idle'.
+// Tracks running games: which players are in which game. Being in a game is
+// what makes a player's lobby status 'playing'.
 // A game is removed once its last player has left.
 export class Games {
   private games = new Map<string, Set<string>>();
 
   constructor(private lobby: Lobby) {}
 
+  isPlaying = (username: string): boolean => {
+    for (const players of this.games.values()) {
+      if (players.has(username)) return true;
+    }
+    return false;
+  };
+
   start = (players: string[]): void => {
     const gameId = randomUUID();
     this.games.set(gameId, new Set(players));
     for (const username of players) {
-      this.lobby.setStatus(username, 'playing');
       this.lobby.sendTo(username, { type: 'game_started', gameId, players });
     }
     console.log(`game ${gameId} started with ${players.join(', ')}`);
@@ -25,7 +31,6 @@ export class Games {
       if (!players.has(username)) continue;
 
       players.delete(username);
-      this.lobby.setStatus(username, 'idle');
       const remainingPlayers = [...players];
       for (const remaining of remainingPlayers) {
         this.lobby.sendTo(remaining, {

@@ -128,7 +128,7 @@ const InvitePlayerModal = (props: Props) => {
             </ul>
           </>
         ) : players.length === 0 ? (
-          <p>No other players are online.</p>
+          <p>No other idle players available.</p>
         ) : (
           <div style={PLAYER_LIST_STYLE}>
             {players.map((name) => {

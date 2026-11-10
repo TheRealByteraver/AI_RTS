@@ -7,3 +7,6 @@
   - other players involved in the same game will get a message that player _name_ left the game
   - if there is only one player left, a modal should pop up, telling the last player that the other player or players left the game, with a button to go back to the lobby
 
+---
+
+- change the text "No other players are online." to "No other idle players available."

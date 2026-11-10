@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>Hendrik</title>
+  <defs><clipPath id="frame"><circle cx="64" cy="64" r="64"/></clipPath></defs>
+  <g clip-path="url(#frame)">
+    <rect width="128" height="128" fill="#8ecae6"/>
+    
+    <path d="M12 130 C12 106 34 97 64 97 C94 97 116 106 116 130 Z" fill="#219ebc"/>
+    <rect x="54" y="84" width="20" height="18" rx="6" fill="#e8b89c"/>
+    <path d="M52 97 L64 110 L76 97 Z" fill="#e8b89c"/>
+    <circle cx="34" cy="63" r="7" fill="#e8b89c"/>
+    <circle cx="94" cy="63" r="7" fill="#e8b89c"/>
+    <ellipse cx="64" cy="61" rx="30" ry="34" fill="#f9d7c0"/>
+    <circle cx="45" cy="73" r="5" fill="#ff7b7b" opacity="0.25"/>
+    <circle cx="83" cy="73" r="5" fill="#ff7b7b" opacity="0.25"/>
+    
+    <path d="M33 60 C30 30 45 19 64 19 C83 19 98 30 95 60 C92 46 84 37 64 37 C44 37 36 46 33 60 Z" fill="#e2b13c"/>
+    <path d="M45 50 Q52 45.5 59 50 M69 50 Q76 45.5 83 50" fill="none" stroke="#e2b13c" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="52" cy="60" rx="5.5" ry="6" fill="#ffffff"/><ellipse cx="76" cy="60" rx="5.5" ry="6" fill="#ffffff"/><circle cx="53" cy="61" r="3" fill="#2b2b2b"/><circle cx="77" cy="61" r="3" fill="#2b2b2b"/><circle cx="54" cy="59.8" r="1" fill="#ffffff"/><circle cx="78" cy="59.8" r="1" fill="#ffffff"/>
+    <path d="M64 63 Q59.5 72 64.5 74" fill="none" stroke="#e8b89c" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M54 81 Q64 89 74 81" fill="none" stroke="#7a3b2e" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="52" cy="60" r="10" fill="#ffffff" fill-opacity="0.15" stroke="#222" stroke-width="2.5"/><circle cx="76" cy="60" r="10" fill="#ffffff" fill-opacity="0.15" stroke="#222" stroke-width="2.5"/><path d="M62 59 Q64 57 66 59 M42 58 L34 56 M86 58 L94 56" stroke="#222" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    
+  </g>
+</svg>

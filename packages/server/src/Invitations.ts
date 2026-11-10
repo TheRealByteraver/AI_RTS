@@ -1,4 +1,5 @@
 import type { InviteeStatus } from '@rts/shared';
+import type { Games } from './Games';
 import type { Lobby } from './Lobby';
 
 interface Invitation {
@@ -12,7 +13,25 @@ interface Invitation {
 export class Invitations {
   private invitations = new Map<string, Invitation>();
 
-  constructor(private lobby: Lobby) {}
+  constructor(
+    private lobby: Lobby,
+    private games: Games,
+  ) {}
+
+  // Involved in an open invitation: as its inviter, or as an invitee who
+  // hasn't declined. This is what makes a lobby status 'preparing'.
+  isPreparing = (username: string): boolean => {
+    for (const invitation of this.invitations.values()) {
+      if (invitation.inviter === username) return true;
+      const status = invitation.invitees.get(username);
+      if (status === 'pending' || status === 'accepted') return true;
+    }
+    return false;
+  };
+
+  // Online and not in a game.
+  private isAvailable = (username: string): boolean =>
+    this.lobby.hasPlayer(username) && !this.games.isPlaying(username);
 
   create = (
     inviter: string,
@@ -27,11 +46,21 @@ export class Invitations {
       return;
     }
 
-    if (!this.lobby.isIdle(inviter)) return;
+    if (!this.isAvailable(inviter)) return;
 
-    // Only players sitting idle in the lobby can be invited.
+    // A player has at most one outgoing invitation at a time. Cancelling the
+    // old one first also makes its invitees idle (invitable) again.
+    for (const [existingId, existing] of this.invitations) {
+      if (existing.inviter === inviter) this.cancel(inviter, existingId);
+    }
+
+    // Only idle players can be invited: not in a game, and not already
+    // involved in another invitation.
     const invitees = [...new Set(requestedInvitees)].filter(
-      (username) => username !== inviter && this.lobby.isIdle(username),
+      (username) =>
+        username !== inviter &&
+        this.isAvailable(username) &&
+        !this.isPreparing(username),
     );
     if (invitees.length === 0) {
       // Tell the inviter's client to drop its pending invitation.
@@ -40,11 +69,6 @@ export class Invitations {
         invitationId,
       });
       return;
-    }
-
-    // A player has at most one outgoing invitation at a time.
-    for (const [existingId, existing] of this.invitations) {
-      if (existing.inviter === inviter) this.cancel(inviter, existingId);
     }
 
     const invitation: Invitation = {
@@ -72,7 +96,7 @@ export class Invitations {
   ): void => {
     const invitation = this.invitations.get(invitationId);
     if (invitation?.invitees.get(invitee) !== 'pending') return;
-    if (accepted && !this.lobby.isIdle(invitee)) return;
+    if (accepted && !this.isAvailable(invitee)) return;
 
     invitation.invitees.set(invitee, accepted ? 'accepted' : 'declined');
     this.sendStatus(invitationId, invitation);
@@ -96,11 +120,11 @@ export class Invitations {
   };
 
   // If the invitation is ready to start (every invitee answered, at least one
-  // accepted who is still idle), removes it and returns the game's players
-  // (inviter first). Otherwise returns null and leaves it untouched.
+  // accepted who is still available), removes it and returns the game's
+  // players (inviter first). Otherwise returns null and leaves it untouched.
   claimForGame = (inviter: string, invitationId: string): string[] | null => {
     const invitation = this.invitations.get(invitationId);
-    if (invitation?.inviter !== inviter || !this.lobby.isIdle(inviter))
+    if (invitation?.inviter !== inviter || !this.isAvailable(inviter))
       return null;
 
     if ([...invitation.invitees.values()].includes('pending')) {
@@ -114,7 +138,7 @@ export class Invitations {
     const accepted = [...invitation.invitees]
       .filter(
         ([username, status]) =>
-          status === 'accepted' && this.lobby.isIdle(username),
+          status === 'accepted' && this.isAvailable(username),
       )
       .map(([username]) => username);
     if (accepted.length === 0) {

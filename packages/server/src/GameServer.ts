@@ -6,11 +6,12 @@ import { parse as parseCookie, serialize as serializeCookie } from 'cookie';
 import express, { type Request, type Response } from 'express';
 import { WebSocketServer } from 'ws';
 import { z } from 'zod';
-import { type ClientCommand, ClientCommandSchema } from '@rts/shared';
+import { type ClientCommand, ClientCommandSchema, type PlayerStatus } from '@rts/shared';
 import { AUTH_COOKIE_MAX_AGE_MS, AUTH_COOKIE_NAME, signToken, verifyCredentials, verifyToken } from './auth';
 import { Games } from './Games';
 import { Invitations } from './Invitations';
 import { Lobby } from './Lobby';
+import { AVATARS_DIRECTORY, AVATARS_URL_PATH, avatarUrlFor } from './players';
 
 const LoginBodySchema = z.object({
   username: z.string().min(1),
@@ -28,13 +29,17 @@ type AuthenticatedRequest = IncomingMessage & { username?: string };
 
 export class GameServer {
   private lobby = new Lobby();
-  private invitations = new Invitations(this.lobby);
   private games = new Games(this.lobby);
+  private invitations = new Invitations(this.lobby, this.games);
 
   constructor(port: number, clientOrigin: string) {
     const expressApp = express();
     expressApp.use(cors({ origin: clientOrigin, credentials: true }));
     expressApp.use(express.json());
+
+    // Avatar images (public, no auth: they're cartoon headshots, and <img>
+    // requests from the client's origin don't carry the SameSite=Strict cookie).
+    expressApp.use(AVATARS_URL_PATH, express.static(AVATARS_DIRECTORY));
 
     expressApp.get('/auth/status', (request: Request, response: Response) => {
       const cookieHeader = request.headers.cookie;
@@ -127,7 +132,7 @@ export class GameServer {
       this.lobby.add(connectionId, username, socket);
       socket.send(JSON.stringify({ type: 'welcome', username }));
       console.log(`${username} joined the lobby`);
-      this.lobby.broadcast();
+      this.broadcastLobby();
 
       socket.on('message', rawMessage => {
         let json: unknown;
@@ -154,7 +159,7 @@ export class GameServer {
         this.games.leave(username);
         this.invitations.withdrawPlayer(username);
         console.log(`${username} left the lobby`);
-        this.lobby.broadcast();
+        this.broadcastLobby();
       });
     });
 
@@ -163,11 +168,34 @@ export class GameServer {
     });
   }
 
+  private statusOf = (username: string): PlayerStatus => {
+    if (this.games.isPlaying(username)) return 'playing';
+    if (this.invitations.isPreparing(username)) return 'preparing';
+    return 'idle';
+  };
+
+  // Sends every player the full lobby (who's online, their status and avatar).
+  private broadcastLobby = (): void => {
+    this.lobby.broadcast({
+      players: this.lobby.usernames().map(username => ({
+        username,
+        status: this.statusOf(username),
+        avatarUrl: avatarUrlFor(username),
+      })),
+    });
+  };
+
   // Identity comes from the socket the command arrived on, never from its contents.
   private handleCommand = (username: string, command: ClientCommand): void => {
+    if (command.type === 'PING') return;
+    this.applyCommand(username, command);
+    // Any invitation or game command can change someone's status. The full
+    // lobby is tiny, so it's simply re-sent rather than tracking what changed.
+    this.broadcastLobby();
+  };
+
+  private applyCommand = (username: string, command: Exclude<ClientCommand, { type: 'PING' }>): void => {
     switch (command.type) {
-      case 'PING':
-        break;
       case 'invite_players':
         this.invitations.create(username, command.invitationId, command.invitees);
         break;
@@ -183,11 +211,10 @@ export class GameServer {
         this.games.start(players);
         // The new players are busy now: drop them from any other invitations.
         for (const player of players) this.invitations.withdrawPlayer(player);
-        this.lobby.broadcast();
         break;
       }
       case 'leave_game':
-        if (this.games.leave(username)) this.lobby.broadcast();
+        this.games.leave(username);
         break;
     }
   };

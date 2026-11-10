@@ -1,31 +1,18 @@
 import { WebSocket } from 'ws';
-import type { LobbyState, PlayerStatus, ServerMessage } from '@rts/shared';
+import type { LobbyState, ServerMessage } from '@rts/shared';
 
 interface Connection {
   username: string;
   socket: WebSocket;
-  status: PlayerStatus;
 }
 
+// The set of connected players and their sockets. Player status and avatars
+// are not stored here; GameServer derives them when building the lobby state.
 export class Lobby {
   private connections = new Map<string, Connection>();
 
   add = (connectionId: string, username: string, socket: WebSocket): void => {
-    this.connections.set(connectionId, { username, socket, status: 'idle' });
-  };
-
-  setStatus = (username: string, status: PlayerStatus): void => {
-    for (const connection of this.connections.values()) {
-      if (connection.username === username) connection.status = status;
-    }
-  };
-
-  // Online and not in a game.
-  isIdle = (username: string): boolean => {
-    for (const connection of this.connections.values()) {
-      if (connection.username === username && connection.status === 'idle') return true;
-    }
-    return false;
+    this.connections.set(connectionId, { username, socket });
   };
 
   remove = (connectionId: string): void => {
@@ -39,6 +26,11 @@ export class Lobby {
     return false;
   };
 
+  // Connected usernames, in connection order.
+  usernames = (): string[] => {
+    return [...this.connections.values()].map(connection => connection.username);
+  };
+
   sendTo = (username: string, message: ServerMessage): void => {
     const payload = JSON.stringify(message);
     for (const connection of this.connections.values()) {
@@ -48,17 +40,8 @@ export class Lobby {
     }
   };
 
-  getState = (): LobbyState => {
-    return {
-      players: [...this.connections.values()].map(connection => ({
-        username: connection.username,
-        status: connection.status,
-      })),
-    };
-  };
-
-  broadcast = (): void => {
-    const message: ServerMessage = { type: 'lobby_state', state: this.getState() };
+  broadcast = (state: LobbyState): void => {
+    const message: ServerMessage = { type: 'lobby_state', state };
     const payload = JSON.stringify(message);
     for (const { socket } of this.connections.values()) {
       if (socket.readyState === WebSocket.OPEN) {

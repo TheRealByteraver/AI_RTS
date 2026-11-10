@@ -64,7 +64,7 @@ The auth system is not responsible for authorising individual game actions (comm
 
 ### What it does
 
-Lets a logged-in player invite other idle players to a game and collect their answers. In `LobbyView`, "Start Game" opens `InvitePlayerModal`, which lists every other player whose status is `idle` as a toggle button; clicking one toggles a checkmark (✓). The invite button reads "Invite Player" or "Invite Players" depending on how many are selected (disabled at zero). Sending the invitation keeps the modal open and switches it to a waiting view: a spinner with "Waiting for player to reply" / "Waiting for players to reply" while anyone is still pending (then "All players have replied." or "Nobody accepted the invitation."), plus a row per invitee showing `waiting…`, `✓ accepted`, or `✗ declined`. In the waiting view the invite button is replaced by a "Start Game" button, greyed out until every invitee has answered and at least one accepted. Each invited player sees `InvitationReceivedModal`: who invited them, who else was invited, and "Yes" / "No" buttons. Their answer goes to the server, which forwards the updated status to the inviter. "Cancel" in the inviter's modal withdraws the invitation and closes the invitees' modals.
+Lets a logged-in player invite other idle players to a game and collect their answers. In `LobbyView`, "Start Game" opens `InvitePlayerModal`, which lists every other player whose status is `idle` as a toggle button (or "No other idle players available."); clicking one toggles a checkmark (✓). The invite button reads "Invite Player" or "Invite Players" depending on how many are selected (disabled at zero). Sending the invitation keeps the modal open and switches it to a waiting view: a spinner with "Waiting for player to reply" / "Waiting for players to reply" while anyone is still pending (then "All players have replied." or "Nobody accepted the invitation."), plus a row per invitee showing `waiting…`, `✓ accepted`, or `✗ declined`. In the waiting view the invite button is replaced by a "Start Game" button, greyed out until every invitee has answered and at least one accepted. Each invited player sees `InvitationReceivedModal`: who invited them, who else was invited, and "Yes" / "No" buttons. Their answer goes to the server, which forwards the updated status to the inviter. "Cancel" in the inviter's modal withdraws the invitation and closes the invitees' modals.
 
 ### Boundaries
 
@@ -77,8 +77,8 @@ Invitations end where a game begins: clicking "Start Game" hands the inviter and
 - **Full status list, not deltas** — `invitation_status` always carries every invitee's status, matching the project's full-state-every-time networking approach; the client just replaces what it had.
 - **Client-generated `invitationId`** — the inviter's client creates the id with `crypto.randomUUID()` so it can show the waiting view immediately (everyone `pending`), cancel before the server has replied, and ignore late `invitation_status` messages for an invitation it already cancelled. The server rejects an id already in use.
 - **Identity from the socket, not the message** — `GameServer.handleCommand` receives the username bound to the socket at upgrade. Only the inviter can cancel, only listed invitees can answer, and each invitee can answer once.
-- **Server-side sanitising** — `Invitations.create` removes duplicates, the inviter themselves, and players who are not online and `idle`. If nobody is left, it replies `invitation_cancelled` and the client's modal returns to the selection view. A player has at most one outgoing invitation; a new one cancels the previous. A player who is `playing` can't send invitations or accept one.
-- **Server re-checks "Start Game"** — the button's enabled state is only a convenience. `Invitations.claimForGame` independently requires that the sender is the inviter and idle, nobody is `pending`, and at least one invitee accepted and is still idle; otherwise it replies with an `error` and keeps the invitation.
+- **Server-side sanitising** — `Invitations.create` first cancels the inviter's previous invitation (a player has at most one outgoing), then removes duplicates, the inviter themselves, and anyone who isn't `idle` — offline, in a game, or already involved in another invitation. If nobody is left, it replies `invitation_cancelled` and the client's modal returns to the selection view. A player who is `playing` can't send invitations or accept one; a `preparing` player can still send one (e.g. while an invitation to them is pending).
+- **Server re-checks "Start Game"** — the button's enabled state is only a convenience. `Invitations.claimForGame` independently requires that the sender is the inviter and not in a game, nobody is `pending`, and at least one invitee accepted and is still online and not in a game; otherwise it replies with an `error` and keeps the invitation.
 - **Withdrawing unavailable players** — `Invitations.withdrawPlayer` runs when a player disconnects or starts playing: their own invitations are cancelled, and they're marked `declined` in every other invitation they were part of — even ones they had already accepted — and those inviters get a fresh `invitation_status`. That keeps every inviter's "Start Game" button honest about who is actually available. On the client, invitation state is reset whenever the connection status leaves `connected`, on logout, and when a game starts.
 - **Client state as a pure reducer** — `invitations.ts` holds `invitationsReducer` (outgoing invitation plus a queue of incoming ones) and `App` feeds it both server messages (via `GameTransport.onInvitation`) and local actions. It sits in `App` because that's where the transport lives.
 - **Shared modal styling, no modal library** — `modalStyles.ts` holds the overlay, dialog and footer styles used by every modal (`role="dialog"`, `aria-modal`); `DialogModal` is a generic title + message + buttons modal for simple confirmations. The spinner is a CSS-only `Spinner` component (`spinner.css`, keyframes can't be inline styles) and is `aria-hidden`; the waiting text sits in an `aria-live` region.
@@ -96,11 +96,30 @@ Invitations end where a game begins: clicking "Start Game" hands the inviter and
 
 ---
 
+## Lobby and player avatars (client and server)
+
+### What it does
+
+`LobbyView` greets the player ("Hi _name_, welcome to the lobby!") and shows `PlayerList`: one card per logged-in player with their avatar, name and status label (`idle`, `preparing to play`, `playing`). Each player in `players.json` has an `avatar` file name pointing at a cartoon-style SVG headshot in `data/avatars/`; the server serves that folder at `/avatars/*` and includes each player's `avatarUrl` (e.g. `/avatars/liesbeth.svg`) in every `lobby_state`.
+
+### Boundaries
+
+Avatars are static content files; there's no upload or per-player customisation. `PlayerList` only displays; inviting still happens through `InvitePlayerModal`.
+
+### Key design decisions and why
+
+- **Avatars as content files, referenced from `players.json`** — following the engine-vs-content split, the images live in `data/avatars/` and the player record only stores a file name. Zod restricts it to a plain `name.svg` file name, so a player record can't point outside that folder.
+- **Served by the game server, not bundled in the client** — the server already owns the player roster (`players.json`), so it also hands out the avatar URL; the client just prefixes it with `API_URL` (now in `config.ts`, shared with `AuthApi`). The route is public: `<img>` requests from the client's origin don't carry the `SameSite=Strict` auth cookie, and the images aren't sensitive.
+- **SVG** — small, crisp at any size, and in line with the vector-art direction for later graphics (decisions §2). The headshots share one generated style (round frame, same face geometry) and vary skin tone, hair, facial hair, glasses and colours; Liesbeth's has long hair, lashes, lipstick and earrings.
+- **`avatarUrl` is nullable** — a connected user missing from `players.json` (not possible today, since login requires a record) gets a grey placeholder circle instead of a broken image.
+
+---
+
 ## Player status and games (client and server)
 
 ### What it does
 
-Every logged-in player has a status: `idle` (in the lobby) or `playing` (in a game). The server tracks it per connection in `Lobby` and includes it in every `lobby_state` broadcast (`players: { username, status }[]`). `Games` tracks which players are in which game. When an inviter starts a game, the inviter and every accepted player switch to `playing`, and their clients replace the lobby with `GameView`: a placeholder page reading "Playing the game" with an "Exit game" button. "Exit game" asks "Are you sure you want to exit the game?" (Yes / No). On "Yes", the player returns to the lobby as `idle`, and every player still in the game sees "Player _name_ left the game." When only one player is left, they get a modal saying the other player (or players) left the game, with a "Back to lobby" button.
+Every logged-in player has a status: `idle` (in the lobby, free to be invited), `preparing` (involved in an open invitation: they sent one that's still open, or they're invited and haven't declined) or `playing` (in a game). The server includes it in every `lobby_state` broadcast (`players: { username, status, avatarUrl }[]`); the lobby shows `preparing` as "preparing to play". `Games` tracks which players are in which game. When an inviter starts a game, the inviter and every accepted player switch to `playing`, and their clients replace the lobby with `GameView`: a placeholder page reading "Playing the game" with an "Exit game" button. "Exit game" asks "Are you sure you want to exit the game?" (Yes / No). On "Yes", the player returns to the lobby as `idle`, and every player still in the game sees "Player _name_ left the game." When only one player is left, they get a modal saying the other player (or players) left the game, with a "Back to lobby" button.
 
 ### Boundaries
 
@@ -108,7 +127,7 @@ There's no gameplay, game state or tick loop yet; `GameView` is a placeholder. A
 
 ### Key design decisions and why
 
-- **Status lives on the server** — `Lobby` is the source of truth for `idle`/`playing`, set by `Games.start` and `Games.leave`, so other players' clients (via `lobby_state`) and server-side checks (who can be invited) agree. The client's own `playerStatus` in `App` is derived from whether it has an active game (`game ? 'playing' : 'idle'`) and picks between `GameView` and `LobbyView`.
+- **Status is derived on the server, never stored** — `GameServer.statusOf` computes it on demand: `Games.isPlaying` → `playing`, else `Invitations.isPreparing` → `preparing`, else `idle`. Since it's computed from the game and invitation data, it can't drift out of sync with them. `Lobby` only tracks connections. `GameServer` re-broadcasts the full `lobby_state` after every connect, disconnect and non-`PING` command, because any of them can change someone's status, and the lobby is tiny. The client's own `playerStatus` in `App` is derived from whether it has an active game (`game ? 'playing' : 'idle'`) and picks between `GameView` and `LobbyView`.
 - **Messages** — client → server: `start_game { invitationId }`, `leave_game` (no game id: the server knows which game the socket's player is in). Server → client: `game_started { gameId, players }` to every player of the new game, `player_left_game { gameId, username, remainingPlayers }` to everyone still in it. These match the `game_started` type planned in decisions §9; there's no separate `game_ended` message because a game simply ends when it's empty.
 - **The last player stays `playing` until they click "Back to lobby"** — that click sends `leave_game` like any other exit, which empties the game and lets the server delete it. The server's view of the last player therefore matches their screen (still on the game page) until they actually leave, so nobody can invite them while the "everyone left" modal is showing.
 - **"Last player" decided from `remainingPlayers`** — the client stores the original `players` and the latest `remainingPlayers`; it shows the modal when one player remains, and derives who left (for the notices) as `players` minus `remainingPlayers`. "player" vs "players" in the modal depends on how many others started the game.
@@ -118,8 +137,8 @@ There's no gameplay, game state or tick loop yet; `GameView` is a placeholder. A
 ### Logic flow
 
 1. Inviter clicks the enabled "Start Game" → `start_game { invitationId }`.
-2. Server: `Invitations.claimForGame` validates and removes the invitation, returning `[inviter, ...accepted]`. `Games.start` creates the game, sets each player `playing`, and sends them `game_started`. `Invitations.withdrawPlayer` runs for each player, then `lobby_state` is broadcast.
+2. Server: `Invitations.claimForGame` validates and removes the invitation, returning `[inviter, ...accepted]`. `Games.start` creates the game (which makes each player `playing`) and sends them `game_started`. `Invitations.withdrawPlayer` runs for each player, then `lobby_state` is broadcast.
 3. Each player's client stores the game, resets its invitation state, and shows `GameView`.
 4. A player clicks "Exit game" → confirmation modal → "Yes" → `leave_game` sent, client returns to the lobby.
-5. Server: `Games.leave` removes the player, sets them `idle`, sends `player_left_game` to the remaining players, deletes the game if it's empty, and `lobby_state` is broadcast.
+5. Server: `Games.leave` removes the player (they're `idle` again), sends `player_left_game` to the remaining players, deletes the game if it's empty, and `lobby_state` is broadcast.
 6. Remaining clients update `remainingPlayers`: a "Player _name_ left the game." line appears, and if only this player is left, the "Game over" modal replaces the exit confirmation. "Back to lobby" sends `leave_game` (step 5), which removes the now-empty game.
