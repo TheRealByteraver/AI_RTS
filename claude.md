@@ -21,6 +21,11 @@ and explaining why the settled decision should be reconsidered.
 
 After completing any task, perform all actions described in this section.
 
+#### Run the tests
+1. Run `pnpm test` and `pnpm typecheck`
+2. Fix any failure you caused. If a test fails because the intended behavior changed, update the test and say so
+3. When you add or change logic in `packages/server` or `packages/shared`, add or update tests for it (in the package's `src/test/` folder)
+
 #### Update the readme.md file
 1. Re-read all the files you created or modified
 2. Update `readme.md` to accurately reflect the current state of the code
