@@ -1,0 +1,18 @@
+- On the Invite Player modal: once the "Invite Player(s)" button was pressed, replace it with a "start game" button that is greyed out by default. It must become accessible when every invited player answered and at least one of the invited players accepted the invitation.
+- Make sure every client (every logged in user) has a state, which can be "idle" (player sits in lobby doing nothing), or "playing" (player is actively involved in a game). When a player has the state "playing", the client should show a new empty page with the words "playing the game" with an "exit game" button. This page is shown instead of the default lobby page that is shown when the player is in the "idle" state.
+- Pressing the "exit game" button should do the following:
+- show an "are you sure you want to exit the game?" yes/no modal with buttons
+- when pressed "yes", the following should happen:
+  - player goes back to lobby and "idle" state
+  - other players involved in the same game will get a message that player _name_ left the game
+  - if there is only one player left, a modal should pop up, telling the last player that the other player or players left the game, with a button to go back to the lobby
+
+---
+
+- change the text "No other players are online." to "No other idle players available."
+- change the text "logged in as <player name>" to "Hi <player name>, welcome to the lobby!"
+- expand the players.json object (in the project root, file of same name) so that every player has an Avatar: generate a cartoon style headshot for every player, and make sure the sex is right (Liesbeth is female, all others are male)
+- replace the json object with the list of logged in players by a list of Avatar's, showing a the image associated with every player as an icon, together with their name and status ("idle", "playing", "preparing to play" (when waiting to accept an invitation or waiting for others to accept invitation))
+
+--- 
+

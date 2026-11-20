@@ -7,6 +7,8 @@
     "dev:server": "pnpm --filter @rts/server dev",
     "dev:client": "pnpm --filter @rts/client dev",
     "typecheck": "pnpm -r exec tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "build": "pnpm -r build",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
@@ -15,7 +17,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.7",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^3.2.7"
   },
   "dependencies": {
     "@types/bcryptjs": "^3.0.0",

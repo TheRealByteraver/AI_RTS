@@ -1,8 +1,10 @@
-import type {
-  ClientCommand,
-  GameTransport,
-  LobbyState,
-  ServerMessage,
+import {
+  type ClientCommand,
+  type GameMessage,
+  type GameTransport,
+  type InvitationMessage,
+  type LobbyState,
+  ServerMessageSchema,
 } from '@rts/shared';
 import { checkConnectionStatus } from './AuthApi';
 
@@ -26,6 +28,8 @@ export class WebSocketTransport implements GameTransport {
   private socket: WebSocket | null = null;
   private lobbyCallbacks = new Set<(state: LobbyState) => void>();
   private welcomeCallbacks = new Set<(username: string) => void>();
+  private invitationCallbacks = new Set<(message: InvitationMessage) => void>();
+  private gameCallbacks = new Set<(message: GameMessage) => void>();
   private statusCallback: StatusCallback | null = null;
   private reconnectAttempts = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -60,14 +64,38 @@ export class WebSocketTransport implements GameTransport {
     };
 
     socket.onmessage = (event) => {
-      const message = JSON.parse(event.data as string) as ServerMessage;
-      if (message.type === 'welcome') {
-        for (const callback of this.welcomeCallbacks)
-          callback(message.username);
-      } else if (message.type === 'lobby_state') {
-        for (const callback of this.lobbyCallbacks) callback(message.state);
-      } else if (message.type === 'error') {
-        console.error('Server error:', message.message);
+      let json: unknown;
+      try {
+        json = JSON.parse(String(event.data));
+      } catch (error) {
+        console.error('Malformed server message:', error);
+        return;
+      }
+
+      const parsed = ServerMessageSchema.safeParse(json);
+      if (!parsed.success) {
+        console.error('Invalid server message:', parsed.error.issues);
+        return;
+      }
+
+      const message = parsed.data;
+      switch (message.type) {
+        case 'welcome':
+          for (const callback of this.welcomeCallbacks)
+            callback(message.username);
+          break;
+        case 'lobby_state':
+          for (const callback of this.lobbyCallbacks) callback(message.state);
+          break;
+        case 'error':
+          console.error('Server error:', message.message);
+          break;
+        case 'game_started':
+        case 'player_left_game':
+          for (const callback of this.gameCallbacks) callback(message);
+          break;
+        default:
+          for (const callback of this.invitationCallbacks) callback(message);
       }
     };
 
@@ -123,5 +151,13 @@ export class WebSocketTransport implements GameTransport {
 
   onWelcome = (callback: (username: string) => void): void => {
     this.welcomeCallbacks.add(callback);
+  };
+
+  onInvitation = (callback: (message: InvitationMessage) => void): void => {
+    this.invitationCallbacks.add(callback);
+  };
+
+  onGame = (callback: (message: GameMessage) => void): void => {
+    this.gameCallbacks.add(callback);
   };
 }
