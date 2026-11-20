@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/index.js"
+    "start": "tsc -p tsconfig.build.json && node dist/index.js"
   },
   "dependencies": {
     "@rts/shared": "workspace:*",

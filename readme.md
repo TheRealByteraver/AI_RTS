@@ -4,6 +4,21 @@ A browser-based, top-view, strictly 2D real-time strategy (RTS) game engine buil
 
 ---
 
+## Running locally
+
+Requires Node.js and pnpm. From the repo root:
+
+1. `pnpm install`
+2. Create `packages/server/.env` with `JWT_SECRET_KEY=<any long random string>` (required; the server refuses to start without it). Optional: `PORT` (default `3000`) and `CLIENT_ORIGIN` (default `http://localhost:5173`, the client origin the server's CORS setting allows).
+3. Start the server: `pnpm dev:server` (listens on http://localhost:3000).
+4. Start the client in a second terminal: `pnpm dev:client`, then open http://localhost:5173. The client finds the server through `VITE_API_URL`, defaulting to `http://localhost:3000`.
+
+Log in with one of the players in `players.json` (usernames plus bcrypt password hashes). Open a second browser profile or private window to log in as a second player.
+
+To run the compiled server instead of the dev server, use `pnpm --filter @rts/server start`; it recompiles first, so it never serves an outdated `dist` build.
+
+Other commands: `pnpm test` runs the Vitest unit tests, `pnpm typecheck` type-checks every package, and `pnpm check` runs Biome.
+
 ## Authentication flow (HTTP and WebSocket)
 
 ### What it does
