@@ -10,3 +10,9 @@
 ---
 
 - change the text "No other players are online." to "No other idle players available."
+- change the text "logged in as <player name>" to "Hi <player name>, welcome to the lobby!"
+- expand the players.json object (in the project root, file of same name) so that every player has an Avatar: generate a cartoon style headshot for every player, and make sure the sex is right (Liesbeth is female, all others are male)
+- replace the json object with the list of logged in players by a list of Avatar's, showing a the image associated with every player as an icon, together with their name and status ("idle", "playing", "preparing to play" (when waiting to accept an invitation or waiting for others to accept invitation))
+
+--- 
+
